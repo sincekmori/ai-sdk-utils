@@ -9,28 +9,52 @@ import * as z from "zod";
  * Zod v4 (package root export). Core types live under `z.core`.
  */
 
+/**
+ * How a model id is turned into a handle by the {@link ModelResolver}:
+ *   - "default" -> `provider(modelId)`        (e.g. `openai("gpt-4o")`)
+ *   - "chat"    -> `provider.chat(modelId)`   (e.g. `openai.chat("gpt-4o")`)
+ * Use "chat" for providers/endpoints that only work through the
+ * chat-completions surface (many OpenAI-compatible servers, older models).
+ */
 export const ModelType = z.enum(["default", "chat"]);
 export type ModelType = z.infer<typeof ModelType>;
+
+/**
+ * Default AI SDK call settings, applied to the model handle in
+ * {@link createCatalog} via `defaultSettingsMiddleware`. They map 1:1 to the
+ * parameters `generateText`/`streamText` accept, so anything set here can also
+ * be overridden per call. Every field is optional; omit the block entirely to
+ * fall back to the provider's own defaults.
+ */
+export const ModelSettings = z.object({
+	maxOutputTokens: z.number().int().positive().optional(),
+	temperature: z.number().optional(),
+	topP: z.number().optional(),
+	topK: z.number().int().optional(),
+	presencePenalty: z.number().optional(),
+	frequencyPenalty: z.number().optional(),
+	stopSequences: z.array(z.string()).optional(),
+	seed: z.number().int().optional(),
+	// Provider-specific options, passed through untouched
+	// (e.g. { openai: { reasoningEffort: "low" } }). Values must be JSON.
+	providerOptions: z.record(z.string(), z.record(z.string(), z.json())).optional(),
+});
+export type ModelSettings = z.infer<typeof ModelSettings>;
 
 export const Model = z.object({
 	id: z.string().min(1), // must match the provider's model id (e.g. "gpt-5.1")
 	type: ModelType,
-	name: z.string().min(1),
-	description: z.string().default(""),
-	// Total tokens the model can consider in one request (input + output combined).
-	contextWindow: z.number().int().positive(),
-	// Separate ceiling on generated (output) tokens. Optional: some providers
-	// do not publish a distinct output cap.
-	maxOutputTokens: z.number().int().positive().optional(),
-	// Training knowledge cutoff as an ISO date (YYYY-MM-DD). Optional: not all
-	// models (e.g. some local ones) publish one.
-	knowledgeCutoff: z.iso.date().optional(),
+	// Default call settings (temperature, topP, ...) baked into the handle. Optional.
+	settings: ModelSettings.optional(),
 });
 export type Model = z.infer<typeof Model>;
 
 export const Provider = z.object({
 	id: z.string().min(1), // becomes the registry prefix => "openai:gpt-5.1"
-	name: z.string().min(1),
+	// Default call settings inherited by every model in this provider. Each
+	// model's own `settings` are merged on top (model wins; `providerOptions`
+	// is merged per provider namespace). Optional.
+	settings: ModelSettings.optional(),
 	models: z.array(Model).min(1),
 });
 export type Provider = z.infer<typeof Provider>;
@@ -39,8 +63,6 @@ export type Provider = z.infer<typeof Provider>;
 export const RoleRef = z.object({
 	provider: z.string().min(1),
 	model: z.string().min(1),
-	// What this role is for (e.g. "Default chat model"). Optional.
-	description: z.string().default(""),
 });
 export type RoleRef = z.infer<typeof RoleRef>;
 
@@ -79,17 +101,6 @@ export const Config = z
 					});
 				}
 				modelIds.add(m.id);
-			}
-
-			// Optional invariant: at most one `type: "default"` per provider.
-			const defaults = p.models.filter((m) => m.type === "default");
-			if (defaults.length > 1) {
-				ctx.addIssue({
-					code: "custom",
-					message: `Provider "${p.id}" has ${defaults.length} models with type "default" (expected at most 1).`,
-					path: ["providers", i, "models"],
-					input: p.id,
-				});
 			}
 		}
 

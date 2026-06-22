@@ -1,0 +1,13 @@
+---
+"ai-sdk-catalog": minor
+---
+
+Add configurable call settings and implement the `chat` model type.
+
+- **Schema slimmed down**: removed `Model.{name, description, contextWindow, maxOutputTokens, knowledgeCutoff}`, `Provider.name`, and `RoleRef.description`.
+- **`ModelType: "chat"` now does something**: `ModelResolver` receives the model's `type` as a third argument, so a resolver can call `provider.chat(modelId)` instead of `provider(modelId)` for endpoints that only speak chat-completions (e.g. Ollama).
+- **Configurable call settings**: an optional `settings` block (`temperature`, `topP`, `maxOutputTokens`, `seed`, `providerOptions`, …) can be set from YAML/JSON. It is baked into the model handle via `defaultSettingsMiddleware`, so it applies to every call and can still be overridden per call.
+- **Provider-level defaults**: `settings` can also sit on a provider as defaults that each model merges/overrides (scalars: model wins; `providerOptions`: merged per provider namespace). `metaForRole().settings` exposes the effective merged value.
+- Removed the "at most one `type: default` per provider" invariant, which no longer fits the `default`/`chat` (call-surface) semantics.
+
+BREAKING CHANGE: `ModelResolver` gained a required third `type` argument, and several config fields were removed (see above).

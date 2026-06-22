@@ -27,9 +27,11 @@ const { text } = await generateText({
 console.log(text);
 
 const chatMeta = catalog.metaForRole("chat");
-console.log("context window:", chatMeta?.contextWindow);
-console.log("max output tokens:", chatMeta?.maxOutputTokens);
-console.log("knowledge cutoff:", chatMeta?.knowledgeCutoff);
+console.log("model id:", chatMeta?.id);
+console.log("type:", chatMeta?.type);
+// Default call settings (temperature, ...) from the config are already baked
+// into the handle above, so generateText picks them up without spreading them.
+console.log("settings:", chatMeta?.settings);
 
 // --- 2. Browser / no file system: validate a plain object ------------------
 // parseConfig is the portable core and takes data you already have.
@@ -46,10 +48,15 @@ const ollama = createOpenAI({
 	apiKey: "ollama", // required by the client but ignored by Ollama
 });
 
-const hybridResolver: ModelResolver = (providerId, modelId) =>
-	providerId === "ollama"
-		? ollama(modelId) // your provider
-		: gatewayResolver(providerId, modelId); // everything else via the gateway
+// `type` lets a resolver pick the call surface: "chat" models go through
+// provider.chat(modelId) (required by OpenAI-compatible endpoints like Ollama),
+// "default" models through provider(modelId).
+const hybridResolver: ModelResolver = (providerId, modelId, type) => {
+	if (providerId !== "ollama") {
+		return gatewayResolver(providerId, modelId, type); // everything else via the gateway
+	}
+	return type === "chat" ? ollama.chat(modelId) : ollama(modelId);
+};
 
 const hybrid = createCatalog(config, hybridResolver);
 await generateText({ model: hybrid.modelForRole("local"), prompt: "ping" });
