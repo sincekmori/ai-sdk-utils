@@ -1,6 +1,6 @@
 {
   "name": "ai-sdk-local-fetch",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Use Vercel AI SDK streamText directly on the client — no server required",
   "keywords": [
     "ai",
