@@ -12,14 +12,10 @@ import { Config } from "../src/schema.ts";
 interface RawModel {
 	id: string;
 	type: string;
-	name: string;
-	description?: string;
-	contextWindow: number;
-	maxOutputTokens?: number;
-	knowledgeCutoff?: string;
+	settings?: Record<string, unknown>;
 }
 interface RawConfig {
-	providers: { id: string; name: string; models: RawModel[] }[];
+	providers: { id: string; models: RawModel[] }[];
 	roles: Record<string, { provider: string; model: string }>;
 }
 
@@ -28,29 +24,17 @@ const valid: RawConfig = {
 	providers: [
 		{
 			id: "openai",
-			name: "OpenAI",
 			models: [
 				{
 					id: "gpt-5.1",
 					type: "chat",
-					name: "GPT-5.1",
-					contextWindow: 400_000,
-					maxOutputTokens: 128_000,
-					knowledgeCutoff: "2024-10-01",
+					settings: { temperature: 0.7, maxOutputTokens: 128_000 },
 				},
 			],
 		},
 		{
 			id: "anthropic",
-			name: "Anthropic",
-			models: [
-				{
-					id: "claude-sonnet-4-5",
-					type: "default",
-					name: "Claude Sonnet 4.5",
-					contextWindow: 200_000,
-				},
-			],
+			models: [{ id: "claude-sonnet-4-5", type: "default" }],
 		},
 	],
 	roles: {
@@ -76,30 +60,32 @@ describe("config schema", () => {
 		expect(() => Config.parse(valid)).not.toThrow();
 	});
 
-	it("defaults description to an empty string", () => {
+	it("keeps call settings on the model", () => {
 		const parsed = Config.parse(valid);
-		expect(parsed.providers[0]?.models[0]?.description).toBe("");
+		expect(parsed.providers[0]?.models[0]?.settings).toStrictEqual({
+			temperature: 0.7,
+			maxOutputTokens: 128_000,
+		});
 	});
 
-	it("allows omitting maxOutputTokens and knowledgeCutoff", () => {
+	it("allows omitting settings", () => {
 		const parsed = Config.parse(valid);
-		const sonnet = parsed.providers[1]?.models[0];
-		expect(sonnet?.maxOutputTokens).toBeUndefined();
-		expect(sonnet?.knowledgeCutoff).toBeUndefined();
+		expect(parsed.providers[1]?.models[0]?.settings).toBeUndefined();
 	});
 
-	it("defaults a role's description to an empty string", () => {
+	it("accepts both model types (default and chat)", () => {
 		const parsed = Config.parse(valid);
-		expect(parsed.roles.chat?.description).toBe("");
+		expect(parsed.providers[0]?.models[0]?.type).toBe("chat");
+		expect(parsed.providers[1]?.models[0]?.type).toBe("default");
 	});
 
-	it("rejects a knowledgeCutoff that is not YYYY-MM-DD", () => {
+	it("rejects an unknown model type", () => {
 		const bad = clone(valid);
-		bad.providers[0].models[0].knowledgeCutoff = "October 2024";
-		expect(() => parseConfig(bad)).toThrow();
+		bad.providers[0].models[0].type = "completion";
+		expect(errorOf(bad)).not.toBe("");
 	});
 
-	// --- Invariants 1-4 -----------------------------------------------------
+	// --- Invariants ---------------------------------------------------------
 
 	it("invariant 1: rejects duplicate provider ids", () => {
 		const bad = clone(valid);
@@ -113,21 +99,13 @@ describe("config schema", () => {
 		expect(errorOf(bad)).toContain("Duplicate model id");
 	});
 
-	it('invariant 3: rejects more than one type "default" per provider', () => {
-		const bad = clone(valid);
-		const second = clone(valid.providers[1].models[0]);
-		second.id = "claude-opus-4-5";
-		bad.providers[1].models.push(second);
-		expect(errorOf(bad)).toContain('type "default"');
-	});
-
-	it("invariant 4a: rejects a role referencing an unknown provider", () => {
+	it("invariant 3a: rejects a role referencing an unknown provider", () => {
 		const bad = clone(valid);
 		bad.roles.chat.provider = "mistral";
 		expect(errorOf(bad)).toContain("unknown provider");
 	});
 
-	it("invariant 4b: rejects a role referencing an unknown model", () => {
+	it("invariant 3b: rejects a role referencing an unknown model", () => {
 		const bad = clone(valid);
 		bad.roles.chat.model = "claude-ghost";
 		expect(errorOf(bad)).toContain("unknown model");
@@ -169,7 +147,7 @@ describe("parseConfig (object) and parseConfigString (text)", () => {
 
 	it("parses both YAML and JSON text", () => {
 		const yamlCfg = parseConfigString(
-			"providers:\n  - id: openai\n    name: OpenAI\n    models:\n      - id: gpt-5.1\n        type: chat\n        name: GPT-5.1\n        contextWindow: 400000\nroles:\n  chat: { provider: openai, model: gpt-5.1 }\n",
+			"providers:\n  - id: openai\n    models:\n      - id: gpt-5.1\n        type: chat\nroles:\n  chat: { provider: openai, model: gpt-5.1 }\n",
 		);
 		expect(yamlCfg.providers[0]?.id).toBe("openai");
 		// YAML is a superset of JSON, so the same parser handles JSON too.

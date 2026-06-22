@@ -1,70 +1,61 @@
 # Single source of truth for providers, models, and role assignments.
-# Loaded and validated at startup. Token counts below are illustrative placeholders.
+# Loaded and validated at startup.
 
 providers:
   - id: openai
-    name: OpenAI
+    # Provider-level default settings, inherited by every model below.
+    # A model's own `settings` are merged on top (model wins).
+    settings:
+      temperature: 0.7
+      maxOutputTokens: 128000
+      providerOptions:
+        openai:
+          reasoningEffort: low
     models:
+      # type: default -> resolved as openai("gpt-5.1"). Inherits the provider
+      # defaults as-is.
       - id: gpt-5.1
-        type: chat
-        name: GPT-5.1
-        description: Flagship reasoning + chat model.
-        contextWindow: 400000 # total (input + output)
-        maxOutputTokens: 128000 # separate generation cap
-        knowledgeCutoff: 2024-10-01
+        type: default
+      # Overrides temperature; merges providerOptions (keeps reasoningEffort:
+      # low, adds parallelToolCalls). maxOutputTokens stays inherited.
       - id: gpt-5.1-mini
-        type: chat
-        name: GPT-5.1 mini
-        description: Cheaper and faster, good default for bulk work.
-        contextWindow: 400000
-        maxOutputTokens: 128000
-        knowledgeCutoff: 2024-10-01
+        type: default
+        settings:
+          temperature: 0.2
+          providerOptions:
+            openai:
+              parallelToolCalls: false
 
   - id: anthropic
-    name: Anthropic
     models:
       - id: claude-sonnet-4-5
         type: default
-        name: Claude Sonnet 4.5
-        description: Balanced default for most tasks.
-        contextWindow: 200000
-        maxOutputTokens: 64000
-        knowledgeCutoff: 2025-03-01
+        settings:
+          temperature: 1
       - id: claude-haiku-4-5
-        type: chat
-        name: Claude Haiku 4.5
-        description: Fast and inexpensive.
-        contextWindow: 200000
-        maxOutputTokens: 64000
-        knowledgeCutoff: 2025-03-01
+        type: default
 
-  # Local models served by Ollama's OpenAI-compatible endpoint.
-  # maxOutputTokens / knowledgeCutoff omitted to show they are optional.
+  # Local models served by Ollama's OpenAI-compatible endpoint. That endpoint
+  # only speaks the chat-completions API, so these use type: chat -> the
+  # resolver calls provider.chat(modelId) instead of provider(modelId).
   - id: ollama
-    name: Ollama (local)
     models:
       - id: qwen3.6:35b
         type: chat
-        name: Qwen3.6 35B
-        description: Local coding/general model.
-        contextWindow: 256000
+        settings:
+          temperature: 0.2
 
-# role -> { provider, model, description? }. Each pair must exist above
-# (validated at load). description is optional.
+# role -> { provider, model }. Each pair must exist above (validated at load).
 roles:
   chat:
     provider: anthropic
     model: claude-sonnet-4-5
-    description: Default conversational model.
   fast:
     provider: anthropic
     model: claude-haiku-4-5
-    description: Low-latency model for cheap, high-volume calls.
   summarize:
     provider: openai
     model: gpt-5.1-mini
-    description: Summarization and bulk text processing.
   local:
     provider: ollama
     model: "qwen3.6:35b"
-    description: Offline/local model via Ollama.

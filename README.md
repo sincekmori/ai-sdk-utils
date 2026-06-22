@@ -43,7 +43,3 @@ pnpm changeset      # describe a change (creates a changeset file)
 
 Merging the changeset to `main` opens a "Version Packages" PR; merging that PR
 publishes the changed packages to npm via OIDC trusted publishing.
-
-## License
-
-[Apache-2.0](LICENSE)
