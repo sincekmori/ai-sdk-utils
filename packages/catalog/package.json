@@ -1,0 +1,63 @@
+{
+  "name": "ai-sdk-catalog",
+  "version": "0.0.0",
+  "description": "Manage Vercel AI SDK providers, models, and roles from one declarative config file.",
+  "keywords": [
+    "ai",
+    "ai-sdk",
+    "catalog",
+    "config",
+    "llm",
+    "model",
+    "provider",
+    "registry",
+    "vercel"
+  ],
+  "homepage": "https://github.com/sincekmori/ai-sdk-utils/tree/main/packages/catalog#readme",
+  "bugs": {
+    "url": "https://github.com/sincekmori/ai-sdk-utils/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sincekmori/ai-sdk-utils.git",
+    "directory": "packages/catalog"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@ai-sdk/openai": "^3.0.73",
+    "@types/node": "^24.0.0",
+    "ai": "^6.0.0"
+  },
+  "peerDependencies": {
+    "ai": ">=6.0.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

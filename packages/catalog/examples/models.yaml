@@ -1,0 +1,70 @@
+# Single source of truth for providers, models, and role assignments.
+# Loaded and validated at startup. Token counts below are illustrative placeholders.
+
+providers:
+  - id: openai
+    name: OpenAI
+    models:
+      - id: gpt-5.1
+        type: chat
+        name: GPT-5.1
+        description: Flagship reasoning + chat model.
+        contextWindow: 400000 # total (input + output)
+        maxOutputTokens: 128000 # separate generation cap
+        knowledgeCutoff: 2024-10-01
+      - id: gpt-5.1-mini
+        type: chat
+        name: GPT-5.1 mini
+        description: Cheaper and faster, good default for bulk work.
+        contextWindow: 400000
+        maxOutputTokens: 128000
+        knowledgeCutoff: 2024-10-01
+
+  - id: anthropic
+    name: Anthropic
+    models:
+      - id: claude-sonnet-4-5
+        type: default
+        name: Claude Sonnet 4.5
+        description: Balanced default for most tasks.
+        contextWindow: 200000
+        maxOutputTokens: 64000
+        knowledgeCutoff: 2025-03-01
+      - id: claude-haiku-4-5
+        type: chat
+        name: Claude Haiku 4.5
+        description: Fast and inexpensive.
+        contextWindow: 200000
+        maxOutputTokens: 64000
+        knowledgeCutoff: 2025-03-01
+
+  # Local models served by Ollama's OpenAI-compatible endpoint.
+  # maxOutputTokens / knowledgeCutoff omitted to show they are optional.
+  - id: ollama
+    name: Ollama (local)
+    models:
+      - id: qwen3.6:35b
+        type: chat
+        name: Qwen3.6 35B
+        description: Local coding/general model.
+        contextWindow: 256000
+
+# role -> { provider, model, description? }. Each pair must exist above
+# (validated at load). description is optional.
+roles:
+  chat:
+    provider: anthropic
+    model: claude-sonnet-4-5
+    description: Default conversational model.
+  fast:
+    provider: anthropic
+    model: claude-haiku-4-5
+    description: Low-latency model for cheap, high-volume calls.
+  summarize:
+    provider: openai
+    model: gpt-5.1-mini
+    description: Summarization and bulk text processing.
+  local:
+    provider: ollama
+    model: "qwen3.6:35b"
+    description: Offline/local model via Ollama.

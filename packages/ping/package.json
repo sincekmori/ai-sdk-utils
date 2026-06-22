@@ -1,0 +1,50 @@
+{
+  "name": "ai-sdk-ping",
+  "version": "0.1.1",
+  "description": "Ping an AI SDK LanguageModel to verify it is reachable and correctly configured.",
+  "keywords": [
+    "ai",
+    "ai-sdk"
+  ],
+  "homepage": "https://github.com/sincekmori/ai-sdk-utils/tree/main/packages/ping#readme",
+  "bugs": {
+    "url": "https://github.com/sincekmori/ai-sdk-utils/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sincekmori/ai-sdk-utils.git",
+    "directory": "packages/ping"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "ai": "^6.0.0"
+  },
+  "peerDependencies": {
+    "ai": ">=6.0.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "ai-sdk-utils",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Monorepo of companion libraries for the Vercel AI SDK.",
+  "homepage": "https://github.com/sincekmori/ai-sdk-utils#readme",
+  "bugs": {
+    "url": "https://github.com/sincekmori/ai-sdk-utils/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sincekmori/ai-sdk-utils.git"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "oxlint",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "^0.18.3",
+    "@changesets/cli": "^2.31.0",
+    "oxfmt": "^0.55.0",
+    "oxlint": "^1.70.0",
+    "publint": "^0.3.21",
+    "tsdown": "^0.22.3",
+    "turbo": "^2.9.18",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.6.0"
+}

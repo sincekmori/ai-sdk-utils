@@ -1,0 +1,57 @@
+{
+  "name": "ai-sdk-local-fetch",
+  "version": "0.2.0",
+  "description": "Use Vercel AI SDK streamText directly on the client — no server required",
+  "keywords": [
+    "ai",
+    "ai-elements",
+    "ai-sdk",
+    "client-side",
+    "fetch",
+    "llm",
+    "local",
+    "ssg",
+    "vercel"
+  ],
+  "homepage": "https://github.com/sincekmori/ai-sdk-utils/tree/main/packages/local-fetch#readme",
+  "bugs": {
+    "url": "https://github.com/sincekmori/ai-sdk-utils/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sincekmori/ai-sdk-utils.git",
+    "directory": "packages/local-fetch"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "ai": "^6.0.0"
+  },
+  "peerDependencies": {
+    "ai": ">=6.0.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

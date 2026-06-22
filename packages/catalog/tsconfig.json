@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // This package is the only one that uses Node built-ins (node:fs, etc.),
+    // so it loads the Node type definitions explicitly.
+    "types": ["node"]
+  },
+  "include": ["src", "test", "examples"]
+}
