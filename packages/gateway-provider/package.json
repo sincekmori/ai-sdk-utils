@@ -1,0 +1,75 @@
+{
+  "name": "ai-sdk-gateway-provider",
+  "version": "0.0.0",
+  "description": "Turn your own LLM gateway into a Vercel AI SDK provider — route Anthropic, OpenAI, and Google models through one endpoint from a single declarative config.",
+  "keywords": [
+    "ai",
+    "ai-sdk",
+    "anthropic",
+    "gateway",
+    "google",
+    "llm",
+    "openai",
+    "provider",
+    "proxy",
+    "vercel"
+  ],
+  "homepage": "https://github.com/sincekmori/ai-sdk-utils/tree/main/packages/gateway-provider#readme",
+  "bugs": {
+    "url": "https://github.com/sincekmori/ai-sdk-utils/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sincekmori/ai-sdk-utils.git",
+    "directory": "packages/gateway-provider"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@ai-sdk/cohere": "^3.0.39",
+    "@ai-sdk/deepseek": "^2.0.39",
+    "@ai-sdk/google": "^3.0.0",
+    "@ai-sdk/groq": "^3.0.42",
+    "@ai-sdk/mistral": "^3.0.40",
+    "@ai-sdk/openai": "^3.0.73",
+    "@ai-sdk/openai-compatible": "^2.0.51",
+    "@ai-sdk/perplexity": "^3.0.36",
+    "@ai-sdk/provider": "^3.0.10",
+    "@ai-sdk/provider-utils": "^4.0.30",
+    "@ai-sdk/xai": "^3.0.96",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "ai": "^6.0.0"
+  },
+  "peerDependencies": {
+    "ai": ">=6.0.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
