@@ -66,6 +66,10 @@
     {
       "files": ["**/examples/**"],
       "rules": { "eslint/no-console": "off" }
+    },
+    {
+      "files": ["packages/gateway-provider/src/provider.ts"],
+      "rules": { "import/max-dependencies": "off" }
     }
   ],
   "ignorePatterns": ["**/dist/**", ".changeset/**"]
