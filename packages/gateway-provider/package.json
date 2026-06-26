@@ -1,6 +1,6 @@
 {
   "name": "ai-sdk-gateway-provider",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Turn your own LLM gateway into a Vercel AI SDK provider — route Anthropic, OpenAI, and Google models through one endpoint from a single declarative config.",
   "keywords": [
     "ai",
