@@ -1,6 +1,6 @@
 {
   "name": "ai-sdk-ping",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Ping an AI SDK LanguageModel to verify it is reachable and correctly configured.",
   "keywords": [
     "ai",
