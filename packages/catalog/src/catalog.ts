@@ -131,7 +131,7 @@ export function createCatalog(config: Config, resolve: ModelResolver = gatewayRe
 
 	const model = (key: ModelKey): LanguageModel => {
 		const found = models.get(key);
-		if (!found) {
+		if (found === undefined) {
 			throw new Error(`Unknown model "${key}".`);
 		}
 		return found;
@@ -157,8 +157,8 @@ export function createCatalog(config: Config, resolve: ModelResolver = gatewayRe
 		roles,
 		model,
 		modelForRole(role) {
-			const entry = roles[role];
-			if (!entry) {
+			const entry: RoleEntry | undefined = roles[role];
+			if (entry === undefined) {
 				throw new Error(`Unknown role "${role}".`);
 			}
 			return entry.model;

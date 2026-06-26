@@ -38,7 +38,7 @@ export const ping = async (model: LanguageModel, options?: PingOptions): Promise
 	const abortController = new AbortController();
 
 	try {
-		const { fullStream } = streamText({
+		const { stream } = streamText({
 			model,
 			prompt: "Say this is a test.",
 			maxRetries: 0,
@@ -49,7 +49,7 @@ export const ping = async (model: LanguageModel, options?: PingOptions): Promise
 			...options,
 		});
 
-		for await (const part of fullStream) {
+		for await (const part of stream) {
 			if (part.type === "start-step") {
 				abortController.abort();
 				return true;

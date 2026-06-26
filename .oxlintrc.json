@@ -20,6 +20,14 @@
     "restriction": "error"
   },
   "rules": {
+    "typescript/no-deprecated": "error",
+    "typescript/switch-exhaustiveness-check": [
+      "error",
+      { "considerDefaultExhaustiveForUnions": true }
+    ],
+    "typescript/prefer-readonly-parameter-types": "off",
+    "typescript/no-unsafe-type-assertion": "off",
+    "typescript/promise-function-async": "off",
     "import/no-named-export": "off",
     "eslint/no-undefined": "off",
     "eslint/no-undef": "off",

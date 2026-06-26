@@ -1,7 +1,14 @@
 // Copyright 2026 Shinsuke Mori
 // SPDX-License-Identifier: Apache-2.0
 
-import { convertToModelMessages, type LanguageModel, streamText, type UIMessage } from "ai";
+import {
+	convertToModelMessages,
+	createUIMessageStreamResponse,
+	type LanguageModel,
+	streamText,
+	toUIMessageStream,
+	type UIMessage,
+} from "ai";
 
 type FetchFunction = typeof globalThis.fetch;
 
@@ -24,14 +31,18 @@ export type ConvertToModelMessagesOptions = NonNullable<
 >;
 
 /**
- * Options passed to `result.toUIMessageStreamResponse()`.
+ * Options for building the UI message stream `Response`.
  *
- * Derived from the first parameter of `toUIMessageStreamResponse` so it stays
- * in sync with the `ai` package automatically.
+ * Combines the options of the standalone `toUIMessageStream` helper (stream
+ * shaping: `sendReasoning`, `onError`, ...) and `createUIMessageStreamResponse`
+ * (the HTTP response: `status`, `headers`, ...), minus the `stream` they each
+ * receive internally. Derived from the `ai` package so it stays in sync.
  */
-export type ToUIMessageStreamResponseOptions = NonNullable<
-	Parameters<ReturnType<typeof streamText>["toUIMessageStreamResponse"]>[0]
->;
+export type ToUIMessageStreamResponseOptions = Omit<
+	Parameters<typeof toUIMessageStream>[0],
+	"stream"
+> &
+	Omit<Parameters<typeof createUIMessageStreamResponse>[0], "stream">;
 
 export type LocalFetchOptions = {
 	/**
@@ -46,7 +57,7 @@ export type LocalFetchOptions = {
 	 */
 	convertToModelMessagesOptions?: ConvertToModelMessagesOptions;
 	/**
-	 * Options forwarded to `result.toUIMessageStreamResponse()`.
+	 * Options for the UI message stream `Response` (stream shaping + HTTP init).
 	 */
 	toUIMessageStreamResponseOptions?: ToUIMessageStreamResponseOptions;
 };
@@ -66,7 +77,7 @@ export type LocalFetchOptions = {
  * const fetch = createLocalFetch({
  *   streamTextOptions: {
  *     model: openai("gpt-5.2-chat"),
- *     system: "You are a helpful assistant.",
+ *     instructions: "You are a helpful assistant.",
  *     tools: { myTool }, // automatically forwarded to convertToModelMessages too
  *   },
  * });
@@ -93,5 +104,12 @@ export const createLocalFetch =
 			}),
 		});
 
-		return result.toUIMessageStreamResponse(toUIMessageStreamResponseOptions);
+		// Non-deprecated v7 path: shape the stream with the standalone
+		// `toUIMessageStream`, then wrap it with `createUIMessageStreamResponse`.
+		// Each helper reads only the options it knows; the rest are ignored.
+		const options = toUIMessageStreamResponseOptions ?? {};
+		return createUIMessageStreamResponse({
+			...options,
+			stream: toUIMessageStream({ ...options, stream: result.stream }),
+		});
 	};

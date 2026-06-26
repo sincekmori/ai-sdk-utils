@@ -26,7 +26,7 @@ export function createBodyModelFetch(slugFor: (model: string) => string): FetchF
 		const requestUrl = input instanceof Request ? input.url : input.toString();
 		if (typeof init?.body === "string" && requestUrl.includes(MODEL_SLUG_PLACEHOLDER)) {
 			const { model } = JSON.parse(init.body) as { model?: string };
-			if (model) {
+			if (model !== undefined && model !== "") {
 				return globalThis.fetch(
 					requestUrl.replaceAll(MODEL_SLUG_PLACEHOLDER, slugFor(model)),
 					init,
@@ -53,7 +53,7 @@ export function createGeminiFetch(
 ): FetchFunction {
 	return (input, init) => {
 		const requestUrl = new URL(input instanceof Request ? input.url : input.toString());
-		const match = requestUrl.pathname.match(/\/models\/(?<model>[^:]+):(?<method>\w+)/u);
+		const match = /\/models\/(?<model>[^:]+):(?<method>\w+)/u.exec(requestUrl.pathname);
 		if (!match?.groups) {
 			return globalThis.fetch(input, init);
 		}

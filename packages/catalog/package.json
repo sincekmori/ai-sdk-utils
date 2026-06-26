@@ -50,12 +50,12 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@ai-sdk/openai": "^3.0.73",
+    "@ai-sdk/openai": "^4.0.0",
     "@types/node": "^24.0.0",
-    "ai": "^6.0.0"
+    "ai": "^7.0.0"
   },
   "peerDependencies": {
-    "ai": ">=6.0.0"
+    "ai": ">=7.0.0"
   },
   "engines": {
     "node": ">=24"

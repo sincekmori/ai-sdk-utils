@@ -18,7 +18,7 @@
     "dev": "tsdown --watch",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "lint": "oxlint",
+    "lint": "oxlint --type-aware",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "changeset": "changeset",
@@ -30,6 +30,7 @@
     "@changesets/cli": "^2.31.0",
     "oxfmt": "^0.55.0",
     "oxlint": "^1.70.0",
+    "oxlint-tsgolint": "^0.23.0",
     "publint": "^0.3.21",
     "tsdown": "^0.22.3",
     "turbo": "^2.9.18",
@@ -39,5 +40,5 @@
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "pnpm@11.6.0"
+  "packageManager": "pnpm@11.8.0"
 }

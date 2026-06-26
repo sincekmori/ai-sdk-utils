@@ -10,7 +10,7 @@ import { createMistral, type MistralProvider } from "@ai-sdk/mistral";
 import { createOpenAI, type OpenAIProvider } from "@ai-sdk/openai";
 import { createOpenAICompatible, type OpenAICompatibleProvider } from "@ai-sdk/openai-compatible";
 import { createPerplexity, type PerplexityProvider } from "@ai-sdk/perplexity";
-import type { LanguageModelV3 } from "@ai-sdk/provider";
+import type { LanguageModelV4 } from "@ai-sdk/provider";
 import { type FetchFunction, loadApiKey, withoutTrailingSlash } from "@ai-sdk/provider-utils";
 import { createXai, type XaiProvider } from "@ai-sdk/xai";
 
@@ -36,17 +36,17 @@ import type { Backend, GatewayConfig } from "./schema.ts";
  * through the typed sub-providers (e.g. `gateway.openai.textEmbeddingModel(id)`).
  */
 export interface GatewayProvider {
-	(modelId: string): LanguageModelV3;
+	(modelId: string): LanguageModelV4;
 
 	/** Creates a model for text generation, routed by the config's `models`. */
-	languageModel(modelId: string): LanguageModelV3;
+	languageModel(modelId: string): LanguageModelV4;
 
 	/**
 	 * Alias of {@link GatewayProvider.languageModel}. The gateway already selects
 	 * the correct call surface per backend (e.g. Chat Completions for OpenAI), so
 	 * `gateway(id)` and `gateway.chat(id)` are equivalent.
 	 */
-	chat(modelId: string): LanguageModelV3;
+	chat(modelId: string): LanguageModelV4;
 
 	/** The Anthropic provider, pointed at the gateway. */
 	readonly anthropic: AnthropicProvider;
@@ -109,7 +109,7 @@ export function createGatewayProvider(config: GatewayConfig): GatewayProvider {
 		factory: (options: { baseURL: string; apiKey: string; fetch: FetchFunction }) => P,
 	): P => {
 		const cached = cache.get(key);
-		if (cached) {
+		if (cached !== undefined) {
 			return cached as P;
 		}
 		const backend = config.backends[key];
@@ -143,7 +143,7 @@ export function createGatewayProvider(config: GatewayConfig): GatewayProvider {
 
 	const getGoogle = (): GoogleGenerativeAIProvider => {
 		const cached = cache.get("google");
-		if (cached) {
+		if (cached !== undefined) {
 			return cached as GoogleGenerativeAIProvider;
 		}
 		const backend = config.backends.google;
@@ -159,7 +159,7 @@ export function createGatewayProvider(config: GatewayConfig): GatewayProvider {
 		return created;
 	};
 
-	const openaiModel = (modelId: string): LanguageModelV3 => {
+	const openaiModel = (modelId: string): LanguageModelV4 => {
 		const provider = getOpenAI();
 		switch (config.backends.openai?.api ?? "chat") {
 			case "responses": {
@@ -174,7 +174,7 @@ export function createGatewayProvider(config: GatewayConfig): GatewayProvider {
 		}
 	};
 
-	const languageModel = (modelId: string): LanguageModelV3 => {
+	const languageModel = (modelId: string): LanguageModelV4 => {
 		switch (backendOf.get(modelId)) {
 			case "anthropic": {
 				return getAnthropic().languageModel(modelId);
