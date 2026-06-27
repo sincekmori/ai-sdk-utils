@@ -11,34 +11,42 @@ import { Config } from "../src/schema.ts";
 // produces cross-shape unions. The real validation happens in parseConfig.
 interface RawModel {
 	id: string;
-	type: string;
+	api?: string;
+	backend?: string;
+	slug?: string;
 	settings?: Record<string, unknown>;
 }
+interface RawProvider {
+	id: string;
+	vendor?: string;
+	baseURL?: string;
+	gateway?: Record<string, unknown>;
+	models: RawModel[];
+}
 interface RawConfig {
-	providers: { id: string; models: RawModel[] }[];
+	providers: RawProvider[];
 	roles: Record<string, { provider: string; model: string }>;
 }
 
-// A minimal, fully valid config reused across tests.
+// A minimal, fully valid config reused across tests: one plain provider and one
+// gateway provider.
 const valid: RawConfig = {
 	providers: [
 		{
 			id: "openai",
-			models: [
-				{
-					id: "gpt-5.1",
-					type: "chat",
-					settings: { temperature: 0.7, maxOutputTokens: 128_000 },
-				},
-			],
+			models: [{ id: "gpt-5.1", settings: { temperature: 0.7, maxOutputTokens: 128_000 } }],
 		},
 		{
-			id: "anthropic",
-			models: [{ id: "claude-sonnet-4-5", type: "default" }],
+			id: "acme",
+			gateway: {
+				baseURL: "https://gateway.example.com/v1",
+				backends: { anthropic: { pathTemplate: "anthropic/{slug}" } },
+			},
+			models: [{ id: "claude-sonnet-4-5", backend: "anthropic" }],
 		},
 	],
 	roles: {
-		chat: { provider: "anthropic", model: "claude-sonnet-4-5" },
+		chat: { provider: "acme", model: "claude-sonnet-4-5" },
 		summarize: { provider: "openai", model: "gpt-5.1" },
 	},
 };
@@ -73,15 +81,9 @@ describe("config schema", () => {
 		expect(parsed.providers[1]?.models[0]?.settings).toBeUndefined();
 	});
 
-	it("accepts both model types (default and chat)", () => {
-		const parsed = Config.parse(valid);
-		expect(parsed.providers[0]?.models[0]?.type).toBe("chat");
-		expect(parsed.providers[1]?.models[0]?.type).toBe("default");
-	});
-
-	it("rejects an unknown model type", () => {
+	it("rejects an unknown api value", () => {
 		const bad = clone(valid);
-		bad.providers[0].models[0].type = "completion";
+		bad.providers[0].models[0].api = "bogus";
 		expect(errorOf(bad)).not.toBe("");
 	});
 
@@ -109,6 +111,48 @@ describe("config schema", () => {
 		const bad = clone(valid);
 		bad.roles.chat.model = "claude-ghost";
 		expect(errorOf(bad)).toContain("unknown model");
+	});
+
+	// --- Gateway / backend coherence ----------------------------------------
+
+	it("requires a backend on a gateway provider's models", () => {
+		const bad = clone(valid);
+		delete bad.providers[1].models[0].backend;
+		expect(errorOf(bad)).toContain('must set a "backend"');
+	});
+
+	it("rejects a backend not configured in the gateway block", () => {
+		const bad = clone(valid);
+		bad.providers[1].models[0].backend = "openai";
+		expect(errorOf(bad)).toContain("is not configured");
+	});
+
+	it("rejects a backend on a plain (non-gateway) provider", () => {
+		const bad = clone(valid);
+		bad.providers[0].models[0].backend = "openai";
+		expect(errorOf(bad)).toContain('has no "gateway" block');
+	});
+
+	it("rejects direct-vendor fields alongside a gateway block", () => {
+		const bad = clone(valid);
+		bad.providers[1].baseURL = "https://elsewhere.example.com";
+		expect(errorOf(bad)).toContain("baseURL");
+	});
+
+	it("requires baseURL for a direct openai-compatible provider", () => {
+		const bad: RawConfig = {
+			providers: [{ id: "compat", vendor: "openai-compatible", models: [{ id: "m" }] }],
+			roles: { r: { provider: "compat", model: "m" } },
+		};
+		expect(errorOf(bad)).toContain("baseURL");
+	});
+
+	it("rejects a gateway pathTemplate missing the {slug} placeholder", () => {
+		const bad = clone(valid);
+		(
+			bad.providers[1].gateway as { backends: Record<string, { pathTemplate: string }> }
+		).backends.anthropic.pathTemplate = "anthropic/fixed";
+		expect(errorOf(bad)).not.toBe("");
 	});
 });
 
@@ -147,7 +191,7 @@ describe("parseConfig (object) and parseConfigString (text)", () => {
 
 	it("parses both YAML and JSON text", () => {
 		const yamlCfg = parseConfigString(
-			"providers:\n  - id: openai\n    models:\n      - id: gpt-5.1\n        type: chat\nroles:\n  chat: { provider: openai, model: gpt-5.1 }\n",
+			"providers:\n  - id: openai\n    models:\n      - id: gpt-5.1\nroles:\n  chat: { provider: openai, model: gpt-5.1 }\n",
 		);
 		expect(yamlCfg.providers[0]?.id).toBe("openai");
 		// YAML is a superset of JSON, so the same parser handles JSON too.

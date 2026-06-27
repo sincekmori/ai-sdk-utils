@@ -26,3 +26,7 @@ npm-debug.log*
 # Editor / OS
 .DS_Store
 *.tgz
+
+# Local, untracked validation scripts — never committed.
+# May reference internal endpoints / keys (e.g. Fujitsu ChatAI). Keep out of git.
+playground/
