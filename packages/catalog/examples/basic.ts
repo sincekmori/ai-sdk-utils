@@ -1,14 +1,7 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import * as z from "zod";
 
-import {
-	Config,
-	createCatalog,
-	loadConfig,
-	parseConfig,
-	type ProviderResolver,
-} from "../src/index.ts";
+import { Config, createCatalog, loadConfig, parseConfig } from "../src/index.ts";
 
 // In a real app this import is `from "ai-sdk-catalog"`.
 // Examples use the relative source path so they run against the local checkout.
@@ -42,24 +35,23 @@ const response = await fetch("/models.json");
 const browserConfig = parseConfig(await response.json());
 createCatalog(browserConfig);
 
-// --- 3. A provider that isn't a built-in vendor: a custom resolver ---------
-// A local Ollama on an OpenAI-compatible endpoint, listed like any provider
-// (no `vendor`/`gateway`) and wired in code — only this one needs a resolver.
-const ollama = createOpenAI({
-	baseURL: "http://localhost:11434/v1",
-	apiKey: "ollama", // required by the client but ignored by Ollama
-});
-
-// `api` lets a resolver pick the call surface; Ollama speaks Chat Completions.
-const ollamaResolver: ProviderResolver = (modelId, api) =>
-	api === "chat" ? ollama.chat(modelId) : ollama.languageModel(modelId);
-
+// --- 3. An OpenAI-compatible server (Ollama), still config-only ------------
+// `vendor: openai` reuses @ai-sdk/openai; `baseURL` points it at the local
+// endpoint — no resolver code, Ollama is just a direct provider. (Providers with
+// bespoke auth like Bedrock/Vertex use createCatalog(config, { resolvers }).)
 const local = createCatalog(
 	parseConfig({
-		providers: [{ id: "ollama", models: [{ id: "llama3.3", api: "chat" }] }],
+		providers: [
+			{
+				id: "ollama",
+				vendor: "openai",
+				baseURL: "http://localhost:11434/v1",
+				apiKey: "ollama", // required by the client but ignored by Ollama
+				models: [{ id: "llama3.3", api: "chat" }], // Ollama speaks Chat Completions
+			},
+		],
 		roles: { local: { provider: "ollama", model: "llama3.3" } },
 	}),
-	{ resolvers: { ollama: ollamaResolver } },
 );
 await generateText({ model: local.modelForRole("local"), prompt: "ping" });
 
