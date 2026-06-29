@@ -46,7 +46,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.0",
+    "@ai-sdk/anthropic": "^4.0.2",
     "@ai-sdk/cohere": "^4.0.0",
     "@ai-sdk/deepseek": "^3.0.0",
     "@ai-sdk/google": "^4.0.0",
