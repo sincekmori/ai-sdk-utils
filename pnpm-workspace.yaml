@@ -1,5 +1,7 @@
 packages:
   - "packages/*"
+allowBuilds:
+  esbuild: true
 minimumReleaseAgeExclude:
   - "@ai-sdk/anthropic@4.0.0"
   - "@ai-sdk/cohere@4.0.0"

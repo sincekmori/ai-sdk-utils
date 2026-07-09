@@ -47,24 +47,24 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.0",
-    "@ai-sdk/cohere": "^4.0.0",
-    "@ai-sdk/deepseek": "^3.0.0",
-    "@ai-sdk/google": "^4.0.0",
-    "@ai-sdk/groq": "^4.0.0",
-    "@ai-sdk/mistral": "^4.0.0",
-    "@ai-sdk/openai": "^4.0.0",
-    "@ai-sdk/openai-compatible": "^3.0.0",
-    "@ai-sdk/perplexity": "^4.0.0",
-    "@ai-sdk/provider": "^4.0.0",
-    "@ai-sdk/provider-utils": "^5.0.0",
-    "@ai-sdk/xai": "^4.0.0",
+    "@ai-sdk/anthropic": "^4.0.9",
+    "@ai-sdk/cohere": "^4.0.5",
+    "@ai-sdk/deepseek": "^3.0.5",
+    "@ai-sdk/google": "^4.0.9",
+    "@ai-sdk/groq": "^4.0.5",
+    "@ai-sdk/mistral": "^4.0.6",
+    "@ai-sdk/openai": "^4.0.8",
+    "@ai-sdk/openai-compatible": "^3.0.5",
+    "@ai-sdk/perplexity": "^4.0.6",
+    "@ai-sdk/provider": "^4.0.2",
+    "@ai-sdk/provider-utils": "^5.0.5",
+    "@ai-sdk/xai": "^4.0.8",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "ai": "^7.0.0"
+    "@types/node": "^26.1.1",
+    "ai": "^7.0.17"
   },
   "peerDependencies": {
     "ai": ">=7.0.0"
