@@ -26,6 +26,9 @@ import { GatewayOptions } from "./backends.ts";
  * code), so it works the same in Node and in the browser. Zod v4.
  */
 
+/** A plain JSON object, mirroring the AI SDK's `JSONObject` type. */
+const JsonObject = z.record(z.string(), z.json());
+
 /**
  * Which API surface a model is reached through:
  *   - "responses"  -> `provider.responses(modelId)` (OpenAI Responses API)
@@ -89,7 +92,7 @@ export const ModelSettings = z.object({
 	seed: z.number().int().optional(),
 	// Provider-specific options, passed through untouched
 	// (e.g. { openai: { reasoningEffort: "low" } }). Values must be JSON.
-	providerOptions: z.record(z.string(), z.record(z.string(), z.json())).optional(),
+	providerOptions: z.record(z.string(), JsonObject).optional(),
 });
 export type ModelSettings = z.infer<typeof ModelSettings>;
 
