@@ -1,0 +1,19 @@
+{
+  "$schema": "../schema.json",
+  "providers": [
+    {
+      "id": "openai",
+      "models": [
+        {
+          "id": "gpt-5.1"
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "chat": {
+      "provider": "openai",
+      "model": "gpt-5.1"
+    }
+  }
+}

@@ -22,7 +22,7 @@ import { GatewayOptions } from "./backends.ts";
  *     bearer-token gateway (Amazon Bedrock, Google Vertex, Azure) is wired in
  *     code via `createCatalog(config, { resolvers })`.
  *
- * Validated from a plain object at startup (parsed from YAML/JSON or built in
+ * Validated from a plain object at startup (parsed from JSON or built in
  * code), so it works the same in Node and in the browser. Zod v4.
  */
 

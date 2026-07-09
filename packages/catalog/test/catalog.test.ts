@@ -173,6 +173,15 @@ describe("createCatalog", () => {
 		});
 		expect(() => createCatalog(cfg)).toThrow(/not a built-in vendor/u);
 	});
+
+	it("validates its input: raw objects work, invalid ones throw a prettified error", () => {
+		const catalog = createCatalog({
+			providers: [{ id: "openai", models: [{ id: "gpt-5.1" }] }],
+			roles: { chat: { provider: "openai", model: "gpt-5.1" } },
+		});
+		expect(catalog.metaForRole("chat")?.id).toBe("gpt-5.1");
+		expect(() => createCatalog({ providers: [], roles: {} })).toThrow(/✖/u);
+	});
 });
 
 describe("createCatalog with a direct vendor", () => {

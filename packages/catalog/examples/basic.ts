@@ -1,17 +1,20 @@
+import { readFile } from "node:fs/promises";
+
 import { generateText } from "ai";
 import * as z from "zod";
 
-import { Config, createCatalog, loadConfig, parseConfig } from "../src/index.ts";
+import { Config, createCatalog } from "../src/index.ts";
 
 // In a real app this import is `from "ai-sdk-catalog"`.
 // Examples use the relative source path so they run against the local checkout.
 
 // --- 1. Load the unified config -------------------------------------------
-// On Node you can read and validate a file in one call. The file mixes direct
-// vendors (@ai-sdk/openai, @ai-sdk/anthropic) with a gateway provider — see
-// examples/models.yaml.
-const config = await loadConfig("./examples/models.yaml");
-const catalog = createCatalog(config);
+// Read the JSON file however you like and hand the object to createCatalog —
+// validation happens in there, so there is no separate parse step. This
+// directory has three sizes: minimal / standard / advanced.
+const configText = await readFile("./examples/ai-sdk-catalog.advanced.json", "utf8");
+const raw: unknown = JSON.parse(configText);
+const catalog = createCatalog(raw as Config);
 
 const { text } = await generateText({
 	model: catalog.modelForRole("chat"), // -> @ai-sdk/anthropic, called directly
@@ -29,33 +32,33 @@ console.log("settings:", chatMeta?.settings);
 // The gateway role resolves to your own gateway, no extra wiring.
 await generateText({ model: catalog.modelForRole("search"), prompt: "What changed recently?" });
 
-// --- 2. Browser / no file system: validate a plain object ------------------
-// parseConfig is the portable core and takes data you already have.
-const response = await fetch("/models.json");
-const browserConfig = parseConfig(await response.json());
-createCatalog(browserConfig);
+// --- 2. Browser / no file system: hand createCatalog a plain object --------
+// createCatalog validates whatever it gets, so fetched JSON goes straight in.
+const response = await fetch("/ai-sdk-catalog.json");
+const fetched: unknown = await response.json();
+createCatalog(fetched as Config);
 
 // --- 3. An OpenAI-compatible server (Ollama), still config-only ------------
 // `vendor: openai` reuses @ai-sdk/openai; `baseURL` points it at the local
 // endpoint — no resolver code, Ollama is just a direct provider. (Providers with
 // bespoke auth like Bedrock/Vertex use createCatalog(config, { resolvers }).)
-const local = createCatalog(
-	parseConfig({
-		providers: [
-			{
-				id: "ollama",
-				vendor: "openai",
-				baseURL: "http://localhost:11434/v1",
-				apiKey: "ollama", // required by the client but ignored by Ollama
-				models: [{ id: "llama3.3", api: "chat" }], // Ollama speaks Chat Completions
-			},
-		],
-		roles: { local: { provider: "ollama", model: "llama3.3" } },
-	}),
-);
+const local = createCatalog({
+	providers: [
+		{
+			id: "ollama",
+			vendor: "openai",
+			baseURL: "http://localhost:11434/v1",
+			apiKey: "ollama", // required by the client but ignored by Ollama
+			models: [{ id: "llama3.3", api: "chat" }], // Ollama speaks Chat Completions
+		},
+	],
+	roles: { local: { provider: "ollama", model: "llama3.3" } },
+});
 await generateText({ model: local.modelForRole("local"), prompt: "ping" });
 
-// --- 4. Bonus: emit a JSON Schema so editors autocomplete/validate the YAML -
-// Write this to models.schema.json and reference it from your YAML language server.
+// --- 4. Bonus: emit a JSON Schema so editors autocomplete/validate configs -
+// The package already ships this as schema.json — point a `"$schema"` key at
+// "./node_modules/ai-sdk-catalog/schema.json" (or a versioned CDN URL). This
+// is how scripts/generate-schema.ts produces it.
 const jsonSchema = z.toJSONSchema(Config);
 console.log(JSON.stringify(jsonSchema, undefined, 2));

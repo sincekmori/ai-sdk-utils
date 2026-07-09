@@ -5,5 +5,5 @@
     // so it loads the Node type definitions explicitly.
     "types": ["node"]
   },
-  "include": ["src", "test", "examples"]
+  "include": ["src", "test", "examples", "scripts"]
 }

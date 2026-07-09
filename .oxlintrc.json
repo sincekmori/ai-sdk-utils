@@ -76,6 +76,10 @@
       "rules": { "eslint/no-console": "off" }
     },
     {
+      "files": ["**/scripts/**"],
+      "rules": { "eslint/no-console": "off", "import/no-default-export": "off" }
+    },
+    {
       "files": ["packages/catalog/src/vendors.ts", "packages/gateway-provider/src/provider.ts"],
       "rules": { "import/max-dependencies": "off" }
     }

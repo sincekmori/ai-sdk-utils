@@ -2,9 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { defaultSettingsMiddleware, type LanguageModel, wrapLanguageModel } from "ai";
+import * as z from "zod";
 
 import { createDirectRuntime, createGatewayRuntime, type ProviderRuntime } from "./gateway.ts";
-import type { Config, Model, ModelKey, ModelSettings, ProviderResolver } from "./schema.ts";
+import {
+	Config,
+	type Model,
+	type ModelKey,
+	type ModelSettings,
+	type ProviderResolver,
+} from "./schema.ts";
 import { isVendor } from "./vendors.ts";
 
 /**
@@ -112,7 +119,12 @@ export interface Catalog {
 }
 
 /**
- * Builds a {@link Catalog} from a validated config.
+ * Builds a {@link Catalog} from a config.
+ *
+ * The config is validated here at runtime — the `Config` parameter type is for
+ * editor completion when authoring configs in code, but data parsed from JSON
+ * passes straight in and gets the same checks. Invalid input throws a readable
+ * error listing every issue with its path.
  *
  * Metadata is indexed eagerly; model handles are resolved on first access and
  * memoized. Resolution is lazy so a provider's API key is only needed when one
@@ -120,10 +132,17 @@ export interface Catalog {
  * nothing, and building the catalog never reads a key or hits the network.
  */
 export function createCatalog(config: Config, options: CatalogOptions = {}): Catalog {
+	const parsed = Config.safeParse(config);
+	if (!parsed.success) {
+		// ZodError#message is a raw JSON dump; prettifyError renders each issue
+		// with its path in a single readable block.
+		throw new Error(z.prettifyError(parsed.error));
+	}
+	const cfg = parsed.data;
 	const meta = new Map<ModelKey, ModelEntry>();
 	const runtimeByProvider = new Map<string, ProviderRuntime>();
 
-	for (const provider of config.providers) {
+	for (const provider of cfg.providers) {
 		const override = options.resolvers?.[provider.id];
 		if (override) {
 			// A resolver override exposes no underlying instance.
@@ -194,7 +213,7 @@ export function createCatalog(config: Config, options: CatalogOptions = {}): Cat
 	};
 
 	const roles: Record<string, RoleEntry> = {};
-	for (const [role, ref] of Object.entries(config.roles)) {
+	for (const [role, ref] of Object.entries(cfg.roles)) {
 		const key: ModelKey = `${ref.provider}:${ref.model}`;
 		const entry = meta.get(key);
 		// entry is guaranteed by Config validation; the guard keeps types honest.

@@ -24,7 +24,8 @@
     "directory": "packages/catalog"
   },
   "files": [
-    "dist"
+    "dist",
+    "schema.json"
   ],
   "type": "module",
   "sideEffects": false,
@@ -36,12 +37,14 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./schema.json": "./schema.json"
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "generate-schema": "node scripts/generate-schema.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -57,7 +60,6 @@
     "@ai-sdk/perplexity": "^4.0.0",
     "@ai-sdk/provider-utils": "^5.0.0",
     "@ai-sdk/xai": "^4.0.0",
-    "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

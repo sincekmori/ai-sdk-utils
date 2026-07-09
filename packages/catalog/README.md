@@ -22,17 +22,21 @@ The official `@ai-sdk/*` provider packages are bundled as dependencies (they sha
 ## Usage
 
 ```ts
-import { generateText } from "ai";
-import { loadConfig, createCatalog } from "ai-sdk-catalog";
+import { readFile } from "node:fs/promises";
 
-const config = await loadConfig("./models.yaml");
+import { generateText } from "ai";
+import { createCatalog } from "ai-sdk-catalog";
+
+// createCatalog validates the config itself — no separate parse/load step.
+const configText = await readFile("./ai-sdk-catalog.json", "utf8");
+const config = JSON.parse(configText);
 const catalog = createCatalog(config);
 
 const { text } = await generateText({
-	model: catalog.modelForRole("chat"),
-	prompt: "Invent a new holiday and describe its traditions.",
-	// No need to pass temperature here — the config's settings are already
-	// baked into the handle (see "Default call settings" below).
+  model: catalog.modelForRole("chat"),
+  prompt: "Invent a new holiday and describe its traditions.",
+  // No need to pass temperature here — the config's settings are already
+  // baked into the handle (see "Default call settings" below).
 });
 
 // Model metadata travels with the role.
@@ -42,48 +46,72 @@ console.log(meta?.id, meta?.provider, meta?.settings);
 
 ### Config file
 
-One file, every kind of provider:
+One JSON file, every kind of provider:
 
-```yaml
-providers:
-  # A direct vendor: @ai-sdk/openai, called straight.
-  # `vendor` defaults to `id`, so this uses OPENAI_API_KEY out of the box.
-  - id: openai
-    settings: # optional default call settings, inherited by every model
-      temperature: 0.7
-    models:
-      - id: gpt-5.1
-      - id: gpt-5.1-mini
-
-  # A direct vendor with a custom id / explicit vendor and endpoint override.
-  - id: anthropic
-    models:
-      - id: claude-sonnet-4-5
-
-  # A special provider behind your own gateway — add a `gateway` block.
-  - id: acme
-    gateway:
-      baseURL: https://gateway.example.com/v1
-      apiKeyEnvVarName: ACME_API_KEY # defaults to AI_GATEWAY_API_KEY
-      backends:
-        anthropic: { pathTemplate: "anthropic/{slug}" }
-        google:
-          pathTemplate: "google/{slug}:{action}"
-          actionMap: { streamGenerateContent: customStreamGenerateContent }
-    models:
-      - id: claude-opus-4-6
-        backend: anthropic
-      - id: gemini-2.5-pro
-        backend: google
-        slug: pro
-
-roles:
-  chat: { provider: anthropic, model: claude-sonnet-4-5 }
-  search: { provider: acme, model: gemini-2.5-pro }
-  cheap: { provider: openai, model: gpt-5.1-mini }
+```json
+{
+  "$schema": "./node_modules/ai-sdk-catalog/schema.json",
+  "providers": [
+    {
+      "id": "openai",
+      "settings": { "temperature": 0.7 },
+      "models": [{ "id": "gpt-5.1" }, { "id": "gpt-5.1-mini" }]
+    },
+    {
+      "id": "anthropic",
+      "models": [{ "id": "claude-sonnet-4-5" }]
+    },
+    {
+      "id": "acme",
+      "gateway": {
+        "baseURL": "https://gateway.example.com/v1",
+        "apiKeyEnvVarName": "ACME_API_KEY",
+        "backends": {
+          "anthropic": { "pathTemplate": "anthropic/{slug}" },
+          "google": {
+            "pathTemplate": "google/{slug}:{action}",
+            "actionMap": { "streamGenerateContent": "customStreamGenerateContent" }
+          }
+        }
+      },
+      "models": [
+        { "id": "claude-opus-4-6", "backend": "anthropic" },
+        { "id": "gemini-2.5-pro", "backend": "google", "slug": "pro" }
+      ]
+    }
+  ],
+  "roles": {
+    "chat": { "provider": "anthropic", "model": "claude-sonnet-4-5" },
+    "search": { "provider": "acme", "model": "gemini-2.5-pro" },
+    "cheap": { "provider": "openai", "model": "gpt-5.1-mini" }
+  }
+}
 ```
 
-The config is validated up front: provider/model id uniqueness, that every role references a real provider+model pair, and — for gateway providers — that each model names a `backend` that the `gateway` block actually configures.
+- `openai` and `anthropic` are **direct vendors**: `vendor` defaults to `id`, so they call `@ai-sdk/openai` / `@ai-sdk/anthropic` straight, reading `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` out of the box. The `settings` block sets default call settings, inherited by every model of the provider.
+- `acme` is a **gateway provider**: the `gateway` block describes your gateway's topology (`apiKeyEnvVarName` defaults to `AI_GATEWAY_API_KEY`), and each model names the `backend` that serves it.
+- `roles` map stable names to provider+model pairs.
+
+The `$schema` line is optional — with it, your editor validates and autocompletes the file; `createCatalog` ignores the key. The package ships the schema as [`schema.json`](schema.json), so the `./node_modules/...` pointer above works right after `npm install` and always matches the installed version. Prefer a URL? Any npm CDN serves it, pinned per version:
+
+```json
+{ "$schema": "https://cdn.jsdelivr.net/npm/ai-sdk-catalog@0.5.0/schema.json" }
+```
+
+Ready-made configs at three sizes live in [`examples/`](examples/): minimal, standard, and advanced.
+
+`createCatalog` validates the config up front: provider/model id uniqueness, that every role references a real provider+model pair, and — for gateway providers — that each model names a `backend` that the `gateway` block actually configures. Invalid input throws a readable error listing every issue with its path.
+
+**Prefer YAML?** The package deliberately ships no YAML dependency. YAML parses to the same plain object — bring your own parser and hand the result to `createCatalog`:
+
+```ts
+import { readFile } from "node:fs/promises";
+import { parse } from "yaml";
+
+const text = await readFile("./ai-sdk-catalog.yaml", "utf8");
+const config = parse(text);
+const catalog = createCatalog(config);
+```
 
 ### Direct vendors
 
@@ -103,17 +131,22 @@ Supported vendors: `anthropic`, `openai`, `openai-compatible`, `mistral`, `coher
 The OpenAI-compatible family (Fireworks, Together, Cerebras, DeepInfra, Ollama, …) is covered by `openai-compatible`.
 Bedrock / Vertex / Azure are intentionally omitted — their bespoke cloud auth doesn't fit; wire them through a custom resolver.
 
-```yaml
-providers:
-  - id: fireworks
-    vendor: openai-compatible
-    baseURL: https://api.fireworks.ai/inference/v1
-    apiKeyEnvVarName: FIREWORKS_API_KEY
-    name: fireworks
-    models:
-      - id: accounts/fireworks/models/llama-v3p3-70b-instruct
-        # OpenAI-compatible servers default to Chat Completions; `api` is optional here
+```json
+{
+  "providers": [
+    {
+      "id": "fireworks",
+      "vendor": "openai-compatible",
+      "baseURL": "https://api.fireworks.ai/inference/v1",
+      "apiKeyEnvVarName": "FIREWORKS_API_KEY",
+      "name": "fireworks",
+      "models": [{ "id": "accounts/fireworks/models/llama-v3p3-70b-instruct" }]
+    }
+  ]
+}
 ```
+
+An OpenAI-compatible server defaults to Chat Completions, so the model's `api` can stay unset here.
 
 ### Your own gateway
 
@@ -133,13 +166,13 @@ import type { GoogleGenerativeAIProvider } from "@ai-sdk/google";
 import { generateText } from "ai";
 
 const google = catalog.provider<GoogleGenerativeAIProvider>(
-	catalog.roles.search.key, // or an explicit "provider:model" key
+  catalog.roles.search.key, // or an explicit "provider:model" key
 );
 
 await generateText({
-	model: catalog.modelForRole("search"),
-	tools: { web_search: google!.tools.googleSearch({}) },
-	prompt: "What changed recently?",
+  model: catalog.modelForRole("search"),
+  tools: { web_search: google!.tools.googleSearch({}) },
+  prompt: "What changed recently?",
 });
 ```
 
@@ -148,17 +181,15 @@ Embeddings and image models are reached the same way, e.g. `catalog.provider<Ope
 
 ### In the browser (or any non-Node runtime)
 
-The core validates a plain object, so it runs anywhere.
-`loadConfig` is a Node-only convenience that reads a file; the browser-safe entry points are `parseConfig` (an object) and `parseConfigString` (YAML or JSON text).
+The package never touches the filesystem — `createCatalog` takes a plain object, so it runs anywhere. Hand it data from wherever you got it:
 
 ```ts
-import { parseConfig, createCatalog } from "ai-sdk-catalog";
+import { createCatalog } from "ai-sdk-catalog";
 
-const config = parseConfig(await (await fetch("/models.json")).json());
+const response = await fetch("/ai-sdk-catalog.json");
+const config = await response.json();
 const catalog = createCatalog(config);
 ```
-
-`loadConfig` imports `node:fs` lazily, so it tree-shakes out of browser bundles when you don't use it.
 
 ### Default call settings
 
@@ -168,24 +199,32 @@ They are baked into the model handle via `defaultSettingsMiddleware`, so they ap
 `settings` can sit on a **provider** (default for all its models) and/or on a **model**.
 The two are merged, with the model winning: scalar fields are overridden, and `providerOptions` is merged per provider namespace (so a model adds/overrides individual options without dropping the provider-level ones).
 
-```yaml
-providers:
-  - id: openai
-    settings: # provider-level defaults, inherited by every model below
-      temperature: 0.7
-      maxOutputTokens: 128000
-      providerOptions: # provider-specific options, passed through untouched
-        openai:
-          reasoningEffort: low
-    models:
-      - id: gpt-5.1 # inherits the provider defaults as-is
-      - id: gpt-5.1-mini
-        settings:
-          temperature: 0.2 # overrides; maxOutputTokens stays inherited
-          providerOptions:
-            openai:
-              parallelToolCalls: false # merged with reasoningEffort: low
+```json
+{
+  "providers": [
+    {
+      "id": "openai",
+      "settings": {
+        "temperature": 0.7,
+        "maxOutputTokens": 128000,
+        "providerOptions": { "openai": { "reasoningEffort": "low" } }
+      },
+      "models": [
+        { "id": "gpt-5.1" },
+        {
+          "id": "gpt-5.1-mini",
+          "settings": {
+            "temperature": 0.2,
+            "providerOptions": { "openai": { "parallelToolCalls": false } }
+          }
+        }
+      ]
+    }
+  ]
+}
 ```
+
+Here `gpt-5.1` inherits the provider defaults as-is. `gpt-5.1-mini` overrides `temperature` (while `maxOutputTokens` stays inherited), and its `providerOptions.openai` gains `parallelToolCalls: false` alongside the inherited `reasoningEffort: "low"`. `providerOptions` values are provider-specific and passed through untouched.
 
 `metaForRole(role)?.settings` returns the **effective** (merged) settings — exactly what is baked into the handle.
 
@@ -210,4 +249,4 @@ const catalog = createCatalog(config, { resolvers: { bedrock: bedrockResolver } 
 
 Resolution is **lazy and memoized**: a provider's API key is only read when one of its models is actually used, so listing a provider you never call costs nothing, and building the catalog never reads a key or hits the network.
 
-See [`examples/basic.ts`](examples/basic.ts) for a full walkthrough, including generating a JSON Schema from the config for editor autocompletion.
+See [`examples/`](examples/) for ready-made configs at three sizes (minimal / standard / advanced) and [`examples/basic.ts`](examples/basic.ts) for a full walkthrough, including generating a JSON Schema from the config for editor autocompletion.

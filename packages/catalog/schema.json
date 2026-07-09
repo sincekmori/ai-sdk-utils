@@ -1,0 +1,403 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "providers": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "vendor": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "openai",
+              "openai-compatible",
+              "mistral",
+              "cohere",
+              "groq",
+              "xai",
+              "deepseek",
+              "perplexity",
+              "google"
+            ]
+          },
+          "baseURL": {
+            "type": "string",
+            "minLength": 1
+          },
+          "apiKey": {
+            "type": "string"
+          },
+          "apiKeyEnvVarName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gateway": {
+            "type": "object",
+            "properties": {
+              "baseURL": {
+                "type": "string",
+                "minLength": 1
+              },
+              "apiKey": {
+                "type": "string"
+              },
+              "apiKeyEnvVarName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "backends": {
+                "type": "object",
+                "properties": {
+                  "anthropic": {
+                    "type": "object",
+                    "properties": {
+                      "pathTemplate": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["pathTemplate"],
+                    "additionalProperties": false
+                  },
+                  "openai": {
+                    "type": "object",
+                    "properties": {
+                      "pathTemplate": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["pathTemplate"],
+                    "additionalProperties": false
+                  },
+                  "openai-compatible": {
+                    "type": "object",
+                    "properties": {
+                      "pathTemplate": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["pathTemplate"],
+                    "additionalProperties": false
+                  },
+                  "mistral": {
+                    "type": "object",
+                    "properties": {
+                      "pathTemplate": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["pathTemplate"],
+                    "additionalProperties": false
+                  },
+                  "cohere": {
+                    "type": "object",
+                    "properties": {
+                      "pathTemplate": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["pathTemplate"],
+                    "additionalProperties": false
+                  },
+                  "groq": {
+                    "type": "object",
+                    "properties": {
+                      "pathTemplate": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["pathTemplate"],
+                    "additionalProperties": false
+                  },
+                  "xai": {
+                    "type": "object",
+                    "properties": {
+                      "pathTemplate": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["pathTemplate"],
+                    "additionalProperties": false
+                  },
+                  "deepseek": {
+                    "type": "object",
+                    "properties": {
+                      "pathTemplate": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["pathTemplate"],
+                    "additionalProperties": false
+                  },
+                  "perplexity": {
+                    "type": "object",
+                    "properties": {
+                      "pathTemplate": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["pathTemplate"],
+                    "additionalProperties": false
+                  },
+                  "google": {
+                    "type": "object",
+                    "properties": {
+                      "pathTemplate": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "actionMap": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": ["pathTemplate"],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": ["baseURL", "backends"],
+            "additionalProperties": false
+          },
+          "settings": {
+            "type": "object",
+            "properties": {
+              "maxOutputTokens": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "temperature": {
+                "type": "number"
+              },
+              "topP": {
+                "type": "number"
+              },
+              "topK": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "presencePenalty": {
+                "type": "number"
+              },
+              "frequencyPenalty": {
+                "type": "number"
+              },
+              "stopSequences": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "seed": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "providerOptions": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "$ref": "#/$defs/__schema0"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "models": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "api": {
+                  "type": "string",
+                  "enum": ["responses", "chat", "completion"]
+                },
+                "backend": {
+                  "type": "string",
+                  "enum": [
+                    "anthropic",
+                    "openai",
+                    "openai-compatible",
+                    "mistral",
+                    "cohere",
+                    "groq",
+                    "xai",
+                    "deepseek",
+                    "perplexity",
+                    "google"
+                  ]
+                },
+                "slug": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "settings": {
+                  "type": "object",
+                  "properties": {
+                    "maxOutputTokens": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "temperature": {
+                      "type": "number"
+                    },
+                    "topP": {
+                      "type": "number"
+                    },
+                    "topK": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "presencePenalty": {
+                      "type": "number"
+                    },
+                    "frequencyPenalty": {
+                      "type": "number"
+                    },
+                    "stopSequences": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "seed": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "providerOptions": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "$ref": "#/$defs/__schema0"
+                        }
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": ["id"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["id", "models"],
+        "additionalProperties": false
+      }
+    },
+    "roles": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "minLength": 1
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["provider", "model"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["providers", "roles"],
+  "additionalProperties": false,
+  "$defs": {
+    "__schema0": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/__schema0"
+          }
+        }
+      ]
+    }
+  }
+}

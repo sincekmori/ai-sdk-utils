@@ -1,14 +1,13 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { readFile } from "node:fs/promises";
 
 import { describe, expect, it } from "vitest";
 
-import { loadConfig, parseConfig, parseConfigString } from "../src/config.ts";
+import buildConfigJsonSchema from "../scripts/generate-schema.ts";
+import { createCatalog } from "../src/catalog.ts";
 import { Config } from "../src/schema.ts";
 
 // Loosely typed shapes so negative tests can mutate freely and indexing never
-// produces cross-shape unions. The real validation happens in parseConfig.
+// produces cross-shape unions. The real validation happens in createCatalog.
 interface RawModel {
 	id: string;
 	api?: string;
@@ -56,7 +55,7 @@ const clone = <T>(value: T): T => structuredClone(value);
 // The validation error message for `data`, or "" if it validated.
 const errorOf = (data: unknown): string => {
 	try {
-		parseConfig(data);
+		createCatalog(data as Config);
 		return "";
 	} catch (error) {
 		return (error as Error).message;
@@ -156,46 +155,24 @@ describe("config schema", () => {
 	});
 });
 
-describe("loadConfig", () => {
-	it("reads and validates a .yaml file", async () => {
-		const cfg = await loadConfig("./examples/models.yaml");
-		expect(cfg.providers.length).toBeGreaterThan(0);
-		expect(cfg.roles.chat).toBeDefined();
+describe("shipped examples and schema.json", () => {
+	it.each([
+		"./examples/ai-sdk-catalog.minimal.json",
+		"./examples/ai-sdk-catalog.standard.json",
+		"./examples/ai-sdk-catalog.advanced.json",
+	])("%s builds a catalog as-is", async (path) => {
+		const raw: unknown = JSON.parse(await readFile(path, "utf8"));
+		const catalog = createCatalog(raw as Config);
+		expect(catalog.meta.size).toBeGreaterThan(0);
+		expect(catalog.roles.chat).toBeDefined();
 	});
 
-	it("reads and validates a .json file", async () => {
-		const dir = await mkdtemp(join(tmpdir(), "catalog-"));
-		const file = join(dir, "models.json");
-		await writeFile(file, JSON.stringify(valid), "utf8");
-		const cfg = await loadConfig(file);
-		expect(cfg.providers[0]?.id).toBe("openai");
-	});
-
-	it("throws a readable, path-tagged error on invalid config", async () => {
-		const dir = await mkdtemp(join(tmpdir(), "catalog-"));
-		const file = join(dir, "broken.yaml");
-		await writeFile(file, "providers: []\nroles: {}\n", "utf8");
-		await expect(loadConfig(file)).rejects.toThrow(file);
-	});
-});
-
-describe("parseConfig (object) and parseConfigString (text)", () => {
-	it("validates a plain object (browser-safe core)", () => {
-		const cfg = parseConfig(valid);
-		expect(cfg.roles.summarize?.provider).toBe("openai");
-	});
-
-	it("throws for an invalid object", () => {
-		expect(() => parseConfig({ providers: [], roles: {} })).toThrow();
-	});
-
-	it("parses both YAML and JSON text", () => {
-		const yamlCfg = parseConfigString(
-			"providers:\n  - id: openai\n    models:\n      - id: gpt-5.1\nroles:\n  chat: { provider: openai, model: gpt-5.1 }\n",
-		);
-		expect(yamlCfg.providers[0]?.id).toBe("openai");
-		// YAML is a superset of JSON, so the same parser handles JSON too.
-		const jsonCfg = parseConfigString(JSON.stringify(valid));
-		expect(jsonCfg.providers[0]?.id).toBe("openai");
+	it("keeps the shipped schema.json in sync with the Zod schema", async () => {
+		// schema.json is committed (and published) so `$schema` pointers resolve;
+		// this guards it against drifting from src/schema.ts. Regenerate with
+		// `pnpm generate-schema && pnpm format` — formatting-only differences
+		// don't matter here because both sides are compared parsed.
+		const committed: unknown = JSON.parse(await readFile("./schema.json", "utf8"));
+		expect(committed).toStrictEqual(buildConfigJsonSchema());
 	});
 });

@@ -1,0 +1,103 @@
+{
+  "$schema": "../schema.json",
+  "providers": [
+    {
+      "id": "openai",
+      "settings": {
+        "temperature": 0.7,
+        "maxOutputTokens": 128000,
+        "providerOptions": {
+          "openai": {
+            "reasoningEffort": "low"
+          }
+        }
+      },
+      "models": [
+        {
+          "id": "gpt-5.1"
+        },
+        {
+          "id": "gpt-5.1-mini",
+          "settings": {
+            "temperature": 0.2,
+            "providerOptions": {
+              "openai": {
+                "parallelToolCalls": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "anthropic",
+      "models": [
+        {
+          "id": "claude-sonnet-4-5",
+          "settings": {
+            "temperature": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "fireworks",
+      "vendor": "openai-compatible",
+      "baseURL": "https://api.fireworks.ai/inference/v1",
+      "apiKeyEnvVarName": "FIREWORKS_API_KEY",
+      "name": "fireworks",
+      "models": [
+        {
+          "id": "accounts/fireworks/models/llama-v3p3-70b-instruct"
+        }
+      ]
+    },
+    {
+      "id": "acme",
+      "gateway": {
+        "baseURL": "https://gateway.example.com/v1",
+        "apiKeyEnvVarName": "ACME_API_KEY",
+        "backends": {
+          "anthropic": {
+            "pathTemplate": "anthropic/{slug}"
+          },
+          "google": {
+            "pathTemplate": "google/{slug}:{action}",
+            "actionMap": {
+              "streamGenerateContent": "customStreamGenerateContent"
+            }
+          }
+        }
+      },
+      "models": [
+        {
+          "id": "claude-opus-4-6",
+          "backend": "anthropic"
+        },
+        {
+          "id": "gemini-2.5-pro",
+          "backend": "google",
+          "slug": "pro"
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "chat": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5"
+    },
+    "search": {
+      "provider": "acme",
+      "model": "gemini-2.5-pro"
+    },
+    "summarize": {
+      "provider": "openai",
+      "model": "gpt-5.1-mini"
+    },
+    "bulk": {
+      "provider": "fireworks",
+      "model": "accounts/fireworks/models/llama-v3p3-70b-instruct"
+    }
+  }
+}
