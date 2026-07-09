@@ -1,0 +1,108 @@
+---
+title: はじめに
+description: ai-sdk-catalog をインストールし、ロール経由で最初のモデルを解決します。
+---
+
+import { TabItem, Tabs } from "@astrojs/starlight/components";
+
+`ai-sdk-catalog` は、「どのプロバイダがどのモデルをどんな制限付きで持っているか」という答えを、
+コードのあちこちに散らばらせる代わりに 1 つの宣言的な設定ファイルにまとめます。アプリは
+**ロール**(`"chat"`、`"fast"`、`"summarize"`)でモデルを参照するので、アプリのコードに触れずに
+背後のモデルを差し替えられます。
+
+## インストール
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+```bash
+npm install ai-sdk-catalog ai zod
+```
+</TabItem>
+<TabItem label="pnpm">
+```bash
+pnpm add ai-sdk-catalog ai zod
+```
+</TabItem>
+<TabItem label="yarn">
+```bash
+yarn add ai-sdk-catalog ai zod
+```
+</TabItem>
+<TabItem label="bun">
+```bash
+bun add ai-sdk-catalog ai zod
+```
+</TabItem>
+</Tabs>
+
+公式の `@ai-sdk/*` プロバイダパッケージは依存としてバンドル済みです。`ai` は peer dependency です。
+
+## 設定ファイルを書く
+
+最小の有効な設定は、プロバイダ 1 つ・モデル 1 つ・ロール 1 つの宣言です:
+
+```json title="ai-sdk-catalog.json"
+{
+  "$schema": "./node_modules/ai-sdk-catalog/schema.json",
+  "providers": [
+    {
+      "id": "openai",
+      "models": [
+        {
+          "id": "gpt-5.1"
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "chat": {
+      "provider": "openai",
+      "model": "gpt-5.1"
+    }
+  }
+}
+```
+
+`{ "id": "openai" }` は `@ai-sdk/openai` を直接呼び出し、そのまま `OPENAI_API_KEY` を読み取ります。
+`$schema` の行は任意です — 指定するとエディタがファイルを検証・補完します。全体像は
+[設定ファイルガイド](../configuration/)、全フィールドは[設定リファレンス](../reference/)を
+参照してください。
+
+## 使う
+
+`createCatalog` は設定の検証まで行うので、別途のパース・ロード手順はありません:
+
+```ts
+import { readFile } from "node:fs/promises";
+
+import { generateText } from "ai";
+import { createCatalog } from "ai-sdk-catalog";
+
+const configText = await readFile("./ai-sdk-catalog.json", "utf8");
+const catalog = createCatalog(JSON.parse(configText));
+
+const { text } = await generateText({
+  model: catalog.modelForRole("chat"),
+  prompt: "新しい祝日を発明して、その伝統を説明してください。",
+});
+```
+
+不正な入力は、ID の重複、存在しないモデルを参照するロール、バックエンド未設定のゲートウェイモデル
+など、すべての問題をパス付きで列挙した読みやすいエラーとして投げられます。
+
+モデルのメタデータはロールと一緒に取り出せます:
+
+```ts
+const meta = catalog.metaForRole("chat");
+console.log(meta?.id, meta?.provider, meta?.settings);
+```
+
+このパッケージはファイルシステムに一切触れません — `createCatalog` はプレーンなオブジェクトを
+受け取るだけなので、Node でもブラウザでも同じように動きます(JSON を fetch して渡せば OK)。
+
+## 次のステップ
+
+- 3 種類のプロバイダ — 直接ベンダ、自前のゲートウェイ、カスタムリゾルバ — を
+  [設定ファイルガイド](../configuration/)で学ぶ。
+- パッケージ自身の JSON Schema から生成される[設定リファレンス](../reference/)で任意の
+  フィールドを調べる。

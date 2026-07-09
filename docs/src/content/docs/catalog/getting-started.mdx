@@ -1,0 +1,107 @@
+---
+title: Getting started
+description: Install ai-sdk-catalog and resolve your first model through a role.
+---
+
+import { TabItem, Tabs } from "@astrojs/starlight/components";
+
+`ai-sdk-catalog` keeps the answer to "which provider has which models, with what limits" in one
+declarative config file instead of scattered across code. Your app references models by **role**
+(`"chat"`, `"fast"`, `"summarize"`), so you can swap the underlying model without touching app code.
+
+## Install
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+```bash
+npm install ai-sdk-catalog ai zod
+```
+</TabItem>
+<TabItem label="pnpm">
+```bash
+pnpm add ai-sdk-catalog ai zod
+```
+</TabItem>
+<TabItem label="yarn">
+```bash
+yarn add ai-sdk-catalog ai zod
+```
+</TabItem>
+<TabItem label="bun">
+```bash
+bun add ai-sdk-catalog ai zod
+```
+</TabItem>
+</Tabs>
+
+The official `@ai-sdk/*` provider packages are bundled as dependencies; `ai` is a peer dependency.
+
+## Write a config file
+
+The smallest valid config declares one provider, one model, and one role:
+
+```json title="ai-sdk-catalog.json"
+{
+  "$schema": "./node_modules/ai-sdk-catalog/schema.json",
+  "providers": [
+    {
+      "id": "openai",
+      "models": [
+        {
+          "id": "gpt-5.1"
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "chat": {
+      "provider": "openai",
+      "model": "gpt-5.1"
+    }
+  }
+}
+```
+
+`{ "id": "openai" }` calls `@ai-sdk/openai` directly, reading `OPENAI_API_KEY` out of the box. The
+`$schema` line is optional — with it, your editor validates and autocompletes the file. See the
+[configuration file guide](../configuration/) for the full tour and the
+[configuration reference](../reference/) for every field.
+
+## Use it
+
+`createCatalog` validates the config itself — no separate parse/load step:
+
+```ts
+import { readFile } from "node:fs/promises";
+
+import { generateText } from "ai";
+import { createCatalog } from "ai-sdk-catalog";
+
+const configText = await readFile("./ai-sdk-catalog.json", "utf8");
+const catalog = createCatalog(JSON.parse(configText));
+
+const { text } = await generateText({
+  model: catalog.modelForRole("chat"),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+```
+
+Invalid input throws a readable error listing every issue with its path: duplicate ids, roles that
+reference unknown models, gateway models without a configured backend, and so on.
+
+Model metadata travels with the role:
+
+```ts
+const meta = catalog.metaForRole("chat");
+console.log(meta?.id, meta?.provider, meta?.settings);
+```
+
+The package never touches the filesystem — `createCatalog` takes a plain object, so it works the
+same in Node and in the browser (fetch the JSON and hand it over).
+
+## Next steps
+
+- Learn the three provider kinds — direct vendors, your own gateway, and custom resolvers — in the
+  [configuration file guide](../configuration/).
+- Look up any field in the [configuration reference](../reference/), generated from the package's
+  own JSON Schema.

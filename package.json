@@ -18,6 +18,8 @@
     "dev": "tsdown --watch",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "docs:dev": "pnpm --filter docs dev",
+    "docs:build": "turbo run build --filter=docs",
     "lint": "oxlint --type-aware",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",

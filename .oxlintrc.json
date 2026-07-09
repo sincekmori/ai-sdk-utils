@@ -68,8 +68,8 @@
   },
   "overrides": [
     {
-      "files": ["*.config.ts"],
-      "rules": { "import/no-default-export": "off" }
+      "files": ["*.config.ts", "*.config.mjs"],
+      "rules": { "import/no-default-export": "off", "import/prefer-default-export": "off" }
     },
     {
       "files": ["**/examples/**"],
@@ -84,5 +84,5 @@
       "rules": { "import/max-dependencies": "off" }
     }
   ],
-  "ignorePatterns": ["**/dist/**", ".changeset/**"]
+  "ignorePatterns": ["**/dist/**", ".changeset/**", "**/.astro/**"]
 }

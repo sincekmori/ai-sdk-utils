@@ -1,7 +1,11 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "globalDependencies": ["packages/catalog/schema.json", "packages/catalog/examples/*.json"],
   "tasks": {
     "typecheck": {},
-    "test": {}
+    "test": {},
+    "build": {
+      "outputs": ["dist/**"]
+    }
   }
 }

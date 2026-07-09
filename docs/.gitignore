@@ -1,0 +1,7 @@
+# Astro build output and generated types
+dist/
+.astro/
+
+# Reference pages generated at build time from packages/catalog/schema.json
+src/content/docs/catalog/reference.mdx
+src/content/docs/ja/catalog/reference.mdx

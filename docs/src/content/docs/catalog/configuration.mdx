@@ -1,0 +1,83 @@
+---
+title: Configuration file
+description: The ai-sdk-catalog config file explained, from a minimal setup to a multi-backend gateway.
+---
+
+import { Code } from "@astrojs/starlight/components";
+import advanced from "../../../../../packages/catalog/examples/ai-sdk-catalog.advanced.json?raw";
+import minimal from "../../../../../packages/catalog/examples/ai-sdk-catalog.minimal.json?raw";
+import standard from "../../../../../packages/catalog/examples/ai-sdk-catalog.standard.json?raw";
+
+export const withUserSchemaPath = (raw) =>
+  raw.replace('"../schema.json"', '"./node_modules/ai-sdk-catalog/schema.json"');
+
+One JSON file declares your `providers` (each with the `models` it serves) and the `roles` your app
+references. A provider resolves in one of three ways, and they all coexist in the same config:
+
+- **direct** — a bundled `@ai-sdk/*` vendor used straight. `{ "id": "openai" }` calls
+  `@ai-sdk/openai` directly with `OPENAI_API_KEY`. Override the endpoint with `baseURL` / `apiKey`
+  — that covers OpenAI-compatible servers like Ollama too, still config-only.
+- **gateway** — add a `gateway` block describing your own LLM gateway's topology and tag each model
+  with its `backend`; requests route there instead. No extra code.
+- **resolver** — a provider whose auth doesn't fit a bundled vendor or a bearer-token gateway
+  (Amazon Bedrock, Google Vertex, Azure) is wired in code via `createCatalog(config, { resolvers })`.
+
+The examples below are the ones shipped in the repository under
+[`packages/catalog/examples/`](https://github.com/sincekmori/ai-sdk-utils/tree/main/packages/catalog/examples)
+and are embedded here straight from the repository, so they never drift from the tested files.
+Only the `$schema` pointer is rewritten to the `./node_modules/ai-sdk-catalog/schema.json` path
+you would use in your own project.
+
+## Minimal
+
+The smallest valid config: one direct vendor, one model, one role.
+
+<Code code={withUserSchemaPath(minimal)} lang="json" title="ai-sdk-catalog.minimal.json" />
+
+- `providers[0].id` is `openai` and there is no `vendor`, so the vendor defaults to the `id`:
+  `@ai-sdk/openai` is called directly, reading `OPENAI_API_KEY`.
+- `roles.chat` is the stable name your app uses; it must point at a declared provider + model pair.
+
+## Standard
+
+Several direct vendors, inherited default call settings, and a local OpenAI-compatible server
+(Ollama) — still config-only.
+
+<Code code={withUserSchemaPath(standard)} lang="json" title="ai-sdk-catalog.standard.json" />
+
+- The `openai` provider's `settings` block sets default call settings inherited by every one of its
+  models; `gpt-5.1-mini` overrides `temperature` for itself only. Settings are baked into the model
+  handle, and remain overridable per call.
+- The `ollama` provider shows the endpoint override: `vendor: "openai"` plus a `baseURL` reaches any
+  OpenAI-compatible server. Its model sets `api: "chat"` because the server speaks Chat Completions
+  rather than the Responses API.
+
+## Advanced
+
+Everything above plus an `openai-compatible` vendor (Fireworks), your own gateway with multiple
+backends, `actionMap` and `slug` overrides, and per-model `providerOptions` merging.
+
+<Code code={withUserSchemaPath(advanced)} lang="json" title="ai-sdk-catalog.advanced.json" />
+
+- `fireworks` uses the `openai-compatible` vendor, which has no canonical endpoint — so `baseURL`
+  is required, and `name` sets the metadata namespace.
+- `acme` is a **gateway provider**: the `gateway` block describes the gateway's topology
+  (`apiKeyEnvVarName` defaults to `AI_GATEWAY_API_KEY`), and each model names the `backend` that
+  serves it. `{slug}` in a `pathTemplate` is replaced with the model's `slug` (falling back to its
+  `id`); for the `google` backend the model lives in the URL, so the whole path is rewritten,
+  including the streaming/non-streaming action via `actionMap`.
+- Per-model `settings` merge over the provider's: `gpt-5.1-mini` keeps the inherited
+  `maxOutputTokens` and `reasoningEffort` while overriding `temperature` and adding
+  `parallelToolCalls`.
+
+## Validation
+
+`createCatalog` validates the config up front: provider and model id uniqueness, that every role
+references a real provider + model pair, and — for gateway providers — that each model names a
+`backend` the `gateway` block actually configures. Invalid input throws a readable error listing
+every issue with its path.
+
+The `$schema` key is optional and ignored at runtime; pointing it at
+`./node_modules/ai-sdk-catalog/schema.json` (or a versioned CDN URL) gives you editor validation
+and autocompletion. The full field-by-field documentation generated from that schema lives in the
+[configuration reference](../reference/).

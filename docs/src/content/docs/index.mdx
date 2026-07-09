@@ -1,0 +1,32 @@
+---
+title: ai-sdk-utils
+description: Companion libraries for the Vercel AI SDK.
+template: splash
+hero:
+  tagline: Companion libraries for the Vercel AI SDK.
+  actions:
+    - text: Get started with ai-sdk-catalog
+      link: /ai-sdk-utils/catalog/getting-started/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/sincekmori/ai-sdk-utils
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## Packages
+
+<CardGrid>
+  <Card title="ai-sdk-catalog" icon="setting">
+    Manage AI SDK providers, models, and roles from one declarative config file — direct vendors or
+    your own LLM gateway, batteries included. [Get started](/ai-sdk-utils/catalog/getting-started/)
+    or jump to the [configuration reference](/ai-sdk-utils/catalog/reference/).
+  </Card>
+  <Card title="More to come" icon="rocket">
+    Documentation for the other packages in the monorepo (such as `ai-sdk-gateway-provider`) will be
+    added here over time. Until then, see their READMEs on
+    [GitHub](https://github.com/sincekmori/ai-sdk-utils).
+  </Card>
+</CardGrid>

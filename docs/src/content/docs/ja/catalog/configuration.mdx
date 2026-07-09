@@ -1,0 +1,85 @@
+---
+title: 設定ファイル
+description: 最小構成からマルチバックエンドのゲートウェイまで、ai-sdk-catalog の設定ファイルを解説します。
+---
+
+import { Code } from "@astrojs/starlight/components";
+import advanced from "../../../../../../packages/catalog/examples/ai-sdk-catalog.advanced.json?raw";
+import minimal from "../../../../../../packages/catalog/examples/ai-sdk-catalog.minimal.json?raw";
+import standard from "../../../../../../packages/catalog/examples/ai-sdk-catalog.standard.json?raw";
+
+export const withUserSchemaPath = (raw) =>
+  raw.replace('"../schema.json"', '"./node_modules/ai-sdk-catalog/schema.json"');
+
+1 つの JSON ファイルに、`providers`(それぞれが提供する `models` を持つ)とアプリが参照する
+`roles` を宣言します。プロバイダは 3 通りのいずれかで解決され、すべて同じ設定ファイル内に
+共存できます:
+
+- **direct** — バンドルされた `@ai-sdk/*` ベンダをそのまま使います。`{ "id": "openai" }` は
+  `@ai-sdk/openai` を `OPENAI_API_KEY` で直接呼び出します。`baseURL` / `apiKey` でエンドポイントを
+  上書きでき、Ollama のような OpenAI 互換サーバーもこれだけで(設定のみで)カバーできます。
+- **gateway** — 自前の LLM ゲートウェイの構成を記述する `gateway` ブロックを追加し、各モデルに
+  `backend` のタグを付けると、リクエストがそちらへルーティングされます。追加のコードは不要です。
+- **resolver** — バンドルベンダにも Bearer トークン式ゲートウェイにも当てはまらない認証を持つ
+  プロバイダ(Amazon Bedrock、Google Vertex、Azure)は、`createCatalog(config, { resolvers })` で
+  コード側から接続します。
+
+以下の例はリポジトリの
+[`packages/catalog/examples/`](https://github.com/sincekmori/ai-sdk-utils/tree/main/packages/catalog/examples)
+に同梱されているものをそのまま埋め込んでいるため、テスト済みファイルと乖離しません。
+`$schema` のパスだけは、実際のプロジェクトで書く `./node_modules/ai-sdk-catalog/schema.json` に
+置き換えて表示しています。
+
+## Minimal
+
+最小の有効な設定: 直接ベンダ 1 つ、モデル 1 つ、ロール 1 つ。
+
+<Code code={withUserSchemaPath(minimal)} lang="json" title="ai-sdk-catalog.minimal.json" />
+
+- `providers[0].id` は `openai` で `vendor` が無いので、ベンダは `id` がそのまま既定値になります:
+  `@ai-sdk/openai` が直接呼ばれ、`OPENAI_API_KEY` を読み取ります。
+- `roles.chat` はアプリが使う安定した名前で、宣言済みのプロバイダ + モデルの組を指す必要があります。
+
+## Standard
+
+複数の直接ベンダ、継承される呼び出し設定の既定値、そしてローカルの OpenAI 互換サーバー(Ollama)—
+これでもまだ設定のみです。
+
+<Code code={withUserSchemaPath(standard)} lang="json" title="ai-sdk-catalog.standard.json" />
+
+- `openai` プロバイダの `settings` ブロックは、そのすべてのモデルに継承される呼び出し設定の
+  既定値です。`gpt-5.1-mini` は自分だけ `temperature` を上書きしています。設定はモデルハンドルに
+  焼き込まれますが、呼び出しごとの上書きも可能です。
+- `ollama` プロバイダはエンドポイント上書きの例です: `vendor: "openai"` と `baseURL` の組み合わせで
+  任意の OpenAI 互換サーバーに接続できます。このサーバーは Responses API ではなく Chat Completions を
+  話すため、モデルに `api: "chat"` を設定しています。
+
+## Advanced
+
+上記すべてに加えて、`openai-compatible` ベンダ(Fireworks)、複数バックエンドを持つ自前の
+ゲートウェイ、`actionMap` と `slug` の上書き、モデル単位の `providerOptions` のマージ。
+
+<Code code={withUserSchemaPath(advanced)} lang="json" title="ai-sdk-catalog.advanced.json" />
+
+- `fireworks` は `openai-compatible` ベンダを使います。このベンダには標準のエンドポイントが
+  存在しないため `baseURL` が必須で、`name` がメタデータの名前空間を設定します。
+- `acme` は**ゲートウェイプロバイダ**です: `gateway` ブロックがゲートウェイの構成を記述し
+  (`apiKeyEnvVarName` の既定値は `AI_GATEWAY_API_KEY`)、各モデルが自分を提供する `backend` を
+  指名します。`pathTemplate` 内の `{slug}` はモデルの `slug`(無ければ `id`)に置換されます。
+  `google` バックエンドはモデルが URL 側に載るためパス全体が書き換えられ、ストリーミング/
+  非ストリーミングのアクション切り替えも `actionMap` で扱えます。
+- モデル単位の `settings` はプロバイダの設定にマージされます: `gpt-5.1-mini` は継承した
+  `maxOutputTokens` と `reasoningEffort` を保ったまま、`temperature` を上書きし
+  `parallelToolCalls` を追加しています。
+
+## バリデーション
+
+`createCatalog` は設定を前もって検証します: プロバイダ・モデル ID の一意性、すべてのロールが
+実在するプロバイダ + モデルの組を参照していること、そしてゲートウェイプロバイダでは各モデルが
+`gateway` ブロックに実際に設定された `backend` を指名していること。不正な入力は、すべての問題を
+パス付きで列挙した読みやすいエラーとして投げられます。
+
+`$schema` キーは任意で、実行時には無視されます。`./node_modules/ai-sdk-catalog/schema.json`
+(またはバージョン付き CDN の URL)を指すようにすると、エディタでの検証と補完が効きます。
+このスキーマから生成されるフィールド単位の完全なドキュメントは[設定リファレンス](../reference/)に
+あります。

@@ -1,0 +1,31 @@
+---
+title: ai-sdk-utils
+description: Vercel AI SDK のコンパニオンライブラリ集。
+template: splash
+hero:
+  tagline: Vercel AI SDK のコンパニオンライブラリ集。
+  actions:
+    - text: ai-sdk-catalog をはじめる
+      link: /ai-sdk-utils/ja/catalog/getting-started/
+      icon: right-arrow
+    - text: GitHub で見る
+      link: https://github.com/sincekmori/ai-sdk-utils
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## パッケージ
+
+<CardGrid>
+  <Card title="ai-sdk-catalog" icon="setting">
+    AI SDK のプロバイダ・モデル・ロールを 1 つの宣言的な設定ファイルで管理します。直接ベンダも自前の
+    LLM ゲートウェイもこれ 1 つで。[はじめる](/ai-sdk-utils/ja/catalog/getting-started/)、または
+    [設定リファレンス](/ai-sdk-utils/ja/catalog/reference/)へ。
+  </Card>
+  <Card title="今後の予定" icon="rocket">
+    モノレポ内の他パッケージ(`ai-sdk-gateway-provider` など)のドキュメントも順次追加予定です。
+    それまでは [GitHub](https://github.com/sincekmori/ai-sdk-utils) の README を参照してください。
+  </Card>
+</CardGrid>

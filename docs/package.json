@@ -1,0 +1,22 @@
+{
+  "name": "docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate-reference": "node scripts/generate-reference.ts",
+    "dev": "pnpm generate-reference && astro dev",
+    "build": "pnpm generate-reference && astro build",
+    "preview": "astro preview",
+    "typecheck": "pnpm generate-reference && astro sync && tsc --noEmit"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.41.3",
+    "astro": "^7.0.6",
+    "sharp": "^0.35.3",
+    "starlight-llms-txt": "^0.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1"
+  }
+}
