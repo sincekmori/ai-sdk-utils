@@ -82,6 +82,13 @@
     {
       "files": ["packages/catalog/src/vendors.ts", "packages/gateway-provider/src/provider.ts"],
       "rules": { "import/max-dependencies": "off" }
+    },
+    {
+      "files": ["docs/src/content.config.ts"],
+      "rules": {
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off"
+      }
     }
   ],
   "ignorePatterns": ["**/dist/**", ".changeset/**", "**/.astro/**"]
