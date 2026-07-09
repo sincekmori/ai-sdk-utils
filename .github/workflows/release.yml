@@ -26,10 +26,12 @@ jobs:
           cache: "pnpm"
           registry-url: "https://registry.npmjs.org"
 
-      # OIDC trusted publishing requires npm >= 11.5.1; the version bundled with
-      # setup-node is older and would fail with E404 on publish.
+      # OIDC trusted publishing requires npm >= 11.5.1, but stay on major 11:
+      # npm 12 changed the `npm info --json` output to an array, which
+      # @changesets/cli (<= 2.31.0) misreads as "never published" and then
+      # crashes on the resulting E403 republish attempts.
       - name: Update npm for OIDC trusted publishing
-        run: npm install -g npm@latest
+        run: npm install -g npm@11
 
       - run: pnpm install --frozen-lockfile
 
