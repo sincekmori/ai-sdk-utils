@@ -33,5 +33,5 @@ Works with any AI SDK-compatible provider:
 import { anthropic } from "@ai-sdk/anthropic";
 import { ping } from "ai-sdk-ping";
 
-const reachable = await ping(anthropic("claude-opus-4-6"));
+const reachable = await ping(anthropic("claude-opus-4-8"));
 ```

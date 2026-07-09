@@ -5,7 +5,7 @@
       "id": "openai",
       "models": [
         {
-          "id": "gpt-5.1"
+          "id": "gpt-5.6"
         }
       ]
     }
@@ -13,7 +13,7 @@
   "roles": {
     "chat": {
       "provider": "openai",
-      "model": "gpt-5.1"
+      "model": "gpt-5.6"
     }
   }
 }

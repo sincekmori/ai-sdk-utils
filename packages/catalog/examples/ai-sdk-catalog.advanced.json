@@ -14,10 +14,10 @@
       },
       "models": [
         {
-          "id": "gpt-5.1"
+          "id": "gpt-5.6"
         },
         {
-          "id": "gpt-5.1-mini",
+          "id": "gpt-5.6-luna",
           "settings": {
             "temperature": 0.2,
             "providerOptions": {
@@ -33,7 +33,7 @@
       "id": "anthropic",
       "models": [
         {
-          "id": "claude-sonnet-4-5",
+          "id": "claude-sonnet-5",
           "settings": {
             "temperature": 1
           }
@@ -48,7 +48,7 @@
       "name": "fireworks",
       "models": [
         {
-          "id": "accounts/fireworks/models/llama-v3p3-70b-instruct"
+          "id": "accounts/fireworks/models/gpt-oss-120b"
         }
       ]
     },
@@ -71,13 +71,13 @@
       },
       "models": [
         {
-          "id": "claude-opus-4-6",
+          "id": "claude-opus-4-8",
           "backend": "anthropic"
         },
         {
-          "id": "gemini-2.5-pro",
+          "id": "gemini-3.5-flash",
           "backend": "google",
-          "slug": "pro"
+          "slug": "flash"
         }
       ]
     }
@@ -85,19 +85,19 @@
   "roles": {
     "chat": {
       "provider": "anthropic",
-      "model": "claude-sonnet-4-5"
+      "model": "claude-sonnet-5"
     },
     "search": {
       "provider": "acme",
-      "model": "gemini-2.5-pro"
+      "model": "gemini-3.5-flash"
     },
     "summarize": {
       "provider": "openai",
-      "model": "gpt-5.1-mini"
+      "model": "gpt-5.6-luna"
     },
     "bulk": {
       "provider": "fireworks",
-      "model": "accounts/fireworks/models/llama-v3p3-70b-instruct"
+      "model": "accounts/fireworks/models/gpt-oss-120b"
     }
   }
 }

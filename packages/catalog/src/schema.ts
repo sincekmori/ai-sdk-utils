@@ -107,7 +107,7 @@ export type ModelSettings = z.infer<typeof ModelSettings>;
  * that the right ones are present for the provider's kind.
  */
 export const Model = z.object({
-	id: z.string().min(1), // must match the vendor's model id (e.g. "gpt-5.1")
+	id: z.string().min(1), // must match the vendor's model id (e.g. "gpt-5.6")
 	api: ModelApi.optional(), // call surface; omit for the vendor default
 	backend: Vendor.optional(), // gateway providers only
 	slug: z.string().min(1).optional(), // gateway providers only (path override)
@@ -127,7 +127,7 @@ export type Model = z.infer<typeof Model>;
  *     passed to `createCatalog` (e.g. Amazon Bedrock, with its bespoke auth).
  */
 export const Provider = z.object({
-	id: z.string().min(1), // becomes the registry prefix => "openai:gpt-5.1"
+	id: z.string().min(1), // becomes the registry prefix => "openai:gpt-5.6"
 	// Direct-vendor fields (ignored when `gateway` is set):
 	vendor: Vendor.optional(), // defaults to `id`
 	baseURL: z.string().min(1).optional(),

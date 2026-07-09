@@ -100,7 +100,7 @@ export interface Catalog {
 	meta: Map<ModelKey, ModelEntry>;
 	/** Role name -> key + metadata. */
 	roles: Record<string, RoleEntry>;
-	/** Model handle by explicit address, e.g. `model("anthropic:claude-sonnet-4-5")`. */
+	/** Model handle by explicit address, e.g. `model("anthropic:claude-sonnet-5")`. */
 	model(key: ModelKey): LanguageModel;
 	/** Model handle for a role, e.g. `modelForRole("chat")` -> pass to generateText. */
 	modelForRole(role: string): LanguageModel;

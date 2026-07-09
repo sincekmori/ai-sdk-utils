@@ -8,10 +8,10 @@
       },
       "models": [
         {
-          "id": "gpt-5.1"
+          "id": "gpt-5.6"
         },
         {
-          "id": "gpt-5.1-mini",
+          "id": "gpt-5.6-luna",
           "settings": {
             "temperature": 0.2
           }
@@ -22,7 +22,7 @@
       "id": "anthropic",
       "models": [
         {
-          "id": "claude-sonnet-4-5"
+          "id": "claude-sonnet-5"
         }
       ]
     },
@@ -33,7 +33,7 @@
       "apiKey": "ollama",
       "models": [
         {
-          "id": "llama3.3",
+          "id": "gpt-oss:20b",
           "api": "chat"
         }
       ]
@@ -42,15 +42,15 @@
   "roles": {
     "chat": {
       "provider": "anthropic",
-      "model": "claude-sonnet-4-5"
+      "model": "claude-sonnet-5"
     },
     "summarize": {
       "provider": "openai",
-      "model": "gpt-5.1-mini"
+      "model": "gpt-5.6-luna"
     },
     "local": {
       "provider": "ollama",
-      "model": "llama3.3"
+      "model": "gpt-oss:20b"
     }
   }
 }

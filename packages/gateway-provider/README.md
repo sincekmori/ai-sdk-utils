@@ -24,8 +24,8 @@ const gateway = createGatewayProvider({
   },
   models: [
     { id: "claude-sonnet-4-6", backend: "anthropic" },
-    { id: "gpt-5.1", backend: "openai" },
-    { id: "gemini-2.5-pro", backend: "google", slug: "pro" },
+    { id: "gpt-5.6", backend: "openai" },
+    { id: "gemini-3.5-flash", backend: "google", slug: "flash" },
   ],
 });
 
@@ -92,7 +92,7 @@ The underlying provider instances are exposed for tools and typed provider metad
 
 ```ts
 await generateText({
-  model: gateway("gemini-2.5-pro"),
+  model: gateway("gemini-3.5-flash"),
   tools: { web_search: gateway.google.tools.googleSearch({}) },
   prompt: "What changed recently?",
 });

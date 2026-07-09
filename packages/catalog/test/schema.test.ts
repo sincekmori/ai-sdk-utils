@@ -33,7 +33,7 @@ const valid: RawConfig = {
 	providers: [
 		{
 			id: "openai",
-			models: [{ id: "gpt-5.1", settings: { temperature: 0.7, maxOutputTokens: 128_000 } }],
+			models: [{ id: "gpt-5.6", settings: { temperature: 0.7, maxOutputTokens: 128_000 } }],
 		},
 		{
 			id: "acme",
@@ -41,12 +41,12 @@ const valid: RawConfig = {
 				baseURL: "https://gateway.example.com/v1",
 				backends: { anthropic: { pathTemplate: "anthropic/{slug}" } },
 			},
-			models: [{ id: "claude-sonnet-4-5", backend: "anthropic" }],
+			models: [{ id: "claude-sonnet-5", backend: "anthropic" }],
 		},
 	],
 	roles: {
-		chat: { provider: "acme", model: "claude-sonnet-4-5" },
-		summarize: { provider: "openai", model: "gpt-5.1" },
+		chat: { provider: "acme", model: "claude-sonnet-5" },
+		summarize: { provider: "openai", model: "gpt-5.6" },
 	},
 };
 

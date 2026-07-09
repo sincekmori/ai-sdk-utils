@@ -46,7 +46,7 @@ Several direct vendors, inherited default call settings, and a local OpenAI-comp
 <Code code={withUserSchemaPath(standard)} lang="json" title="ai-sdk-catalog.standard.json" />
 
 - The `openai` provider's `settings` block sets default call settings inherited by every one of its
-  models; `gpt-5.1-mini` overrides `temperature` for itself only. Settings are baked into the model
+  models; `gpt-5.6-luna` overrides `temperature` for itself only. Settings are baked into the model
   handle, and remain overridable per call.
 - The `ollama` provider shows the endpoint override: `vendor: "openai"` plus a `baseURL` reaches any
   OpenAI-compatible server. Its model sets `api: "chat"` because the server speaks Chat Completions
@@ -66,7 +66,7 @@ backends, `actionMap` and `slug` overrides, and per-model `providerOptions` merg
   serves it. `{slug}` in a `pathTemplate` is replaced with the model's `slug` (falling back to its
   `id`); for the `google` backend the model lives in the URL, so the whole path is rewritten,
   including the streaming/non-streaming action via `actionMap`.
-- Per-model `settings` merge over the provider's: `gpt-5.1-mini` keeps the inherited
+- Per-model `settings` merge over the provider's: `gpt-5.6-luna` keeps the inherited
   `maxOutputTokens` and `reasoningEffort` while overriding `temperature` and adding
   `parallelToolCalls`.
 

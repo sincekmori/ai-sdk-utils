@@ -55,11 +55,11 @@ One JSON file, every kind of provider:
     {
       "id": "openai",
       "settings": { "temperature": 0.7 },
-      "models": [{ "id": "gpt-5.1" }, { "id": "gpt-5.1-mini" }]
+      "models": [{ "id": "gpt-5.6" }, { "id": "gpt-5.6-luna" }]
     },
     {
       "id": "anthropic",
-      "models": [{ "id": "claude-sonnet-4-5" }]
+      "models": [{ "id": "claude-sonnet-5" }]
     },
     {
       "id": "acme",
@@ -75,15 +75,15 @@ One JSON file, every kind of provider:
         }
       },
       "models": [
-        { "id": "claude-opus-4-6", "backend": "anthropic" },
-        { "id": "gemini-2.5-pro", "backend": "google", "slug": "pro" }
+        { "id": "claude-opus-4-8", "backend": "anthropic" },
+        { "id": "gemini-3.5-flash", "backend": "google", "slug": "flash" }
       ]
     }
   ],
   "roles": {
-    "chat": { "provider": "anthropic", "model": "claude-sonnet-4-5" },
-    "search": { "provider": "acme", "model": "gemini-2.5-pro" },
-    "cheap": { "provider": "openai", "model": "gpt-5.1-mini" }
+    "chat": { "provider": "anthropic", "model": "claude-sonnet-5" },
+    "search": { "provider": "acme", "model": "gemini-3.5-flash" },
+    "cheap": { "provider": "openai", "model": "gpt-5.6-luna" }
   }
 }
 ```
@@ -140,7 +140,7 @@ Bedrock / Vertex / Azure are intentionally omitted — their bespoke cloud auth 
       "baseURL": "https://api.fireworks.ai/inference/v1",
       "apiKeyEnvVarName": "FIREWORKS_API_KEY",
       "name": "fireworks",
-      "models": [{ "id": "accounts/fireworks/models/llama-v3p3-70b-instruct" }]
+      "models": [{ "id": "accounts/fireworks/models/gpt-oss-120b" }]
     }
   ]
 }
@@ -210,9 +210,9 @@ The two are merged, with the model winning: scalar fields are overridden, and `p
         "providerOptions": { "openai": { "reasoningEffort": "low" } }
       },
       "models": [
-        { "id": "gpt-5.1" },
+        { "id": "gpt-5.6" },
         {
-          "id": "gpt-5.1-mini",
+          "id": "gpt-5.6-luna",
           "settings": {
             "temperature": 0.2,
             "providerOptions": { "openai": { "parallelToolCalls": false } }
@@ -224,7 +224,7 @@ The two are merged, with the model winning: scalar fields are overridden, and `p
 }
 ```
 
-Here `gpt-5.1` inherits the provider defaults as-is. `gpt-5.1-mini` overrides `temperature` (while `maxOutputTokens` stays inherited), and its `providerOptions.openai` gains `parallelToolCalls: false` alongside the inherited `reasoningEffort: "low"`. `providerOptions` values are provider-specific and passed through untouched.
+Here `gpt-5.6` inherits the provider defaults as-is. `gpt-5.6-luna` overrides `temperature` (while `maxOutputTokens` stays inherited), and its `providerOptions.openai` gains `parallelToolCalls: false` alongside the inherited `reasoningEffort: "low"`. `providerOptions` values are provider-specific and passed through untouched.
 
 `metaForRole(role)?.settings` returns the **effective** (merged) settings — exactly what is baked into the handle.
 

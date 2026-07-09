@@ -10,14 +10,14 @@ const config = Config.parse({
 	providers: [
 		{
 			id: "openai",
-			models: [{ id: "gpt-5.1-mini", settings: { temperature: 0.7, maxOutputTokens: 128_000 } }],
+			models: [{ id: "gpt-5.6-luna", settings: { temperature: 0.7, maxOutputTokens: 128_000 } }],
 		},
-		{ id: "anthropic", models: [{ id: "claude-sonnet-4-5" }] },
+		{ id: "anthropic", models: [{ id: "claude-sonnet-5" }] },
 		{ id: "ollama", models: [{ id: "qwen3.6:35b", api: "chat" }] },
 	],
 	roles: {
-		chat: { provider: "anthropic", model: "claude-sonnet-4-5" },
-		summarize: { provider: "openai", model: "gpt-5.1-mini" },
+		chat: { provider: "anthropic", model: "claude-sonnet-5" },
+		summarize: { provider: "openai", model: "gpt-5.6-luna" },
 		local: { provider: "ollama", model: "qwen3.6:35b" },
 	},
 });
@@ -44,12 +44,12 @@ describe("createCatalog", () => {
 	it("indexes every model by its provider:model key with metadata intact", () => {
 		const catalog = createCatalog(config, { resolvers: fakeResolvers() });
 		expect([...catalog.meta.keys()].toSorted()).toStrictEqual([
-			"anthropic:claude-sonnet-4-5",
+			"anthropic:claude-sonnet-5",
 			"ollama:qwen3.6:35b",
-			"openai:gpt-5.1-mini",
+			"openai:gpt-5.6-luna",
 		]);
 
-		const mini = catalog.meta.get("openai:gpt-5.1-mini");
+		const mini = catalog.meta.get("openai:gpt-5.6-luna");
 		expect(mini?.settings).toStrictEqual({ temperature: 0.7, maxOutputTokens: 128_000 });
 		expect(mini?.provider).toBe("openai");
 	});
@@ -58,13 +58,13 @@ describe("createCatalog", () => {
 		const catalog = createCatalog(config, { resolvers: fakeResolvers() });
 		const model = catalog.modelForRole("chat") as unknown as { provider: string; modelId: string };
 		expect(model.provider).toBe("anthropic");
-		expect(model.modelId).toBe("claude-sonnet-4-5");
+		expect(model.modelId).toBe("claude-sonnet-5");
 		expect(() => catalog.modelForRole("nope")).toThrow(/Unknown role/u);
 	});
 
 	it("metaForRole returns the role's metadata", () => {
 		const catalog = createCatalog(config, { resolvers: fakeResolvers() });
-		expect(catalog.metaForRole("summarize")?.key).toBe("openai:gpt-5.1-mini");
+		expect(catalog.metaForRole("summarize")?.key).toBe("openai:gpt-5.6-luna");
 		expect(catalog.metaForRole("summarize")?.provider).toBe("openai");
 		expect(catalog.metaForRole("nope")).toBeUndefined();
 	});
@@ -78,13 +78,13 @@ describe("createCatalog", () => {
 		// Nothing is resolved until a handle is actually requested.
 		expect(openai).not.toHaveBeenCalled();
 
-		catalog.model("openai:gpt-5.1-mini");
-		catalog.model("anthropic:claude-sonnet-4-5");
+		catalog.model("openai:gpt-5.6-luna");
+		catalog.model("anthropic:claude-sonnet-5");
 		catalog.model("ollama:qwen3.6:35b");
 
 		// Models with no `api` reach the resolver with undefined (vendor default).
-		expect(openai).toHaveBeenCalledWith("gpt-5.1-mini", undefined);
-		expect(anthropic).toHaveBeenCalledWith("claude-sonnet-4-5", undefined);
+		expect(openai).toHaveBeenCalledWith("gpt-5.6-luna", undefined);
+		expect(anthropic).toHaveBeenCalledWith("claude-sonnet-5", undefined);
 		// An explicit api is passed through so the resolver can pick the surface.
 		expect(ollama).toHaveBeenCalledWith("qwen3.6:35b", "chat");
 	});
@@ -97,8 +97,8 @@ describe("createCatalog", () => {
 		};
 		const catalog = createCatalog(config, { resolvers: { ...fakeResolvers(), openai } });
 
-		const first = catalog.model("openai:gpt-5.1-mini");
-		const second = catalog.model("openai:gpt-5.1-mini");
+		const first = catalog.model("openai:gpt-5.6-luna");
+		const second = catalog.model("openai:gpt-5.6-luna");
 		expect(second).toBe(first);
 		expect(calls).toBe(1); // resolver invoked once, not per access
 	});
@@ -114,10 +114,10 @@ describe("createCatalog", () => {
 		const catalog = createCatalog(config, { resolvers: fakeResolvers(make) });
 
 		// Model with settings is wrapped -> a different object than the resolver returned.
-		expect(catalog.model("openai:gpt-5.1-mini")).not.toBe(handles.get("openai:gpt-5.1-mini"));
+		expect(catalog.model("openai:gpt-5.6-luna")).not.toBe(handles.get("openai:gpt-5.6-luna"));
 		// Model without settings is returned untouched -> same reference.
-		expect(catalog.model("anthropic:claude-sonnet-4-5")).toBe(
-			handles.get("anthropic:claude-sonnet-4-5"),
+		expect(catalog.model("anthropic:claude-sonnet-5")).toBe(
+			handles.get("anthropic:claude-sonnet-5"),
 		);
 	});
 
@@ -132,9 +132,9 @@ describe("createCatalog", () => {
 						providerOptions: { openai: { reasoningEffort: "low" } },
 					},
 					models: [
-						{ id: "gpt-5.1" },
+						{ id: "gpt-5.6" },
 						{
-							id: "gpt-5.1-mini",
+							id: "gpt-5.6-luna",
 							settings: {
 								temperature: 0.2,
 								providerOptions: { openai: { parallelToolCalls: false } },
@@ -143,16 +143,16 @@ describe("createCatalog", () => {
 					],
 				},
 			],
-			roles: { chat: { provider: "openai", model: "gpt-5.1" } },
+			roles: { chat: { provider: "openai", model: "gpt-5.6" } },
 		});
 		const catalog = createCatalog(merged, { resolvers: fakeResolvers() });
 
-		expect(catalog.meta.get("openai:gpt-5.1")?.settings).toStrictEqual({
+		expect(catalog.meta.get("openai:gpt-5.6")?.settings).toStrictEqual({
 			temperature: 0.7,
 			maxOutputTokens: 128_000,
 			providerOptions: { openai: { reasoningEffort: "low" } },
 		});
-		expect(catalog.meta.get("openai:gpt-5.1-mini")?.settings).toStrictEqual({
+		expect(catalog.meta.get("openai:gpt-5.6-luna")?.settings).toStrictEqual({
 			temperature: 0.2, // model overrides
 			maxOutputTokens: 128_000, // inherited
 			providerOptions: { openai: { reasoningEffort: "low", parallelToolCalls: false } }, // merged
@@ -176,10 +176,10 @@ describe("createCatalog", () => {
 
 	it("validates its input: raw objects work, invalid ones throw a prettified error", () => {
 		const catalog = createCatalog({
-			providers: [{ id: "openai", models: [{ id: "gpt-5.1" }] }],
-			roles: { chat: { provider: "openai", model: "gpt-5.1" } },
+			providers: [{ id: "openai", models: [{ id: "gpt-5.6" }] }],
+			roles: { chat: { provider: "openai", model: "gpt-5.6" } },
 		});
-		expect(catalog.metaForRole("chat")?.id).toBe("gpt-5.1");
+		expect(catalog.metaForRole("chat")?.id).toBe("gpt-5.6");
 		expect(() => createCatalog({ providers: [], roles: {} })).toThrow(/✖/u);
 	});
 });
@@ -187,12 +187,12 @@ describe("createCatalog", () => {
 describe("createCatalog with a direct vendor", () => {
 	it("resolves a bare provider through its @ai-sdk vendor (vendor defaults to id)", () => {
 		const cfg = Config.parse({
-			providers: [{ id: "openai", apiKey: "test-key", models: [{ id: "gpt-5.1-mini" }] }],
-			roles: { chat: { provider: "openai", model: "gpt-5.1-mini" } },
+			providers: [{ id: "openai", apiKey: "test-key", models: [{ id: "gpt-5.6-luna" }] }],
+			roles: { chat: { provider: "openai", model: "gpt-5.6-luna" } },
 		});
 		const catalog = createCatalog(cfg);
 		const model = catalog.modelForRole("chat") as unknown as { modelId: string };
-		expect(model.modelId).toBe("gpt-5.1-mini");
+		expect(model.modelId).toBe("gpt-5.6-luna");
 	});
 
 	it("honors an explicit vendor different from the provider id", () => {
@@ -202,14 +202,14 @@ describe("createCatalog with a direct vendor", () => {
 					id: "claude",
 					vendor: "anthropic",
 					apiKey: "test-key",
-					models: [{ id: "claude-opus-4-6" }],
+					models: [{ id: "claude-opus-4-8" }],
 				},
 			],
-			roles: { chat: { provider: "claude", model: "claude-opus-4-6" } },
+			roles: { chat: { provider: "claude", model: "claude-opus-4-8" } },
 		});
 		const catalog = createCatalog(cfg);
 		const model = catalog.modelForRole("chat") as unknown as { modelId: string };
-		expect(model.modelId).toBe("claude-opus-4-6");
+		expect(model.modelId).toBe("claude-opus-4-8");
 	});
 });
 
@@ -284,11 +284,11 @@ describe("createCatalog with a gateway provider", () => {
 describe("catalog.provider(key)", () => {
 	it("returns the vendor instance for a direct provider", () => {
 		const cfg = Config.parse({
-			providers: [{ id: "openai", apiKey: "test-key", models: [{ id: "gpt-5.1-mini" }] }],
-			roles: { chat: { provider: "openai", model: "gpt-5.1-mini" } },
+			providers: [{ id: "openai", apiKey: "test-key", models: [{ id: "gpt-5.6-luna" }] }],
+			roles: { chat: { provider: "openai", model: "gpt-5.6-luna" } },
 		});
 		const catalog = createCatalog(cfg);
-		const openai = catalog.provider<{ languageModel: unknown }>("openai:gpt-5.1-mini");
+		const openai = catalog.provider<{ languageModel: unknown }>("openai:gpt-5.6-luna");
 		expect(openai?.languageModel).toBeTypeOf("function");
 	});
 

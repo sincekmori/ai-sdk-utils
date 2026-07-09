@@ -49,10 +49,10 @@ const local = createCatalog({
 			vendor: "openai",
 			baseURL: "http://localhost:11434/v1",
 			apiKey: "ollama", // required by the client but ignored by Ollama
-			models: [{ id: "llama3.3", api: "chat" }], // Ollama speaks Chat Completions
+			models: [{ id: "gpt-oss:20b", api: "chat" }], // Ollama speaks Chat Completions
 		},
 	],
-	roles: { local: { provider: "ollama", model: "llama3.3" } },
+	roles: { local: { provider: "ollama", model: "gpt-oss:20b" } },
 });
 await generateText({ model: local.modelForRole("local"), prompt: "ping" });
 

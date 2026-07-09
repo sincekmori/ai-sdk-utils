@@ -26,7 +26,7 @@ import type { Backend, GatewayConfig } from "./schema.ts";
  * ```ts
  * const gateway = createGatewayProvider(config);
  * const { providerMetadata } = await generateText({
- *   model: gateway("gemini-2.5-pro"),
+ *   model: gateway("gemini-3.5-flash"),
  *   tools: { web_search: gateway.google.tools.googleSearch({}) },
  *   prompt: "What are the latest regulatory updates?",
  * });

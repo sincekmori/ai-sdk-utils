@@ -21,11 +21,11 @@ const config = {
 	},
 	models: [
 		{ id: "claude-sonnet-4-6", backend: "anthropic" },
-		{ id: "gpt-5.1", backend: "openai" },
-		{ id: "llama-3.3-70b", backend: "openai-compatible" },
+		{ id: "gpt-5.6", backend: "openai" },
+		{ id: "gpt-oss-120b", backend: "openai-compatible" },
 		{ id: "mistral-large-latest", backend: "mistral" },
 		{ id: "moonshotai/kimi-k2", backend: "groq" },
-		{ id: "gemini-2.5-pro", backend: "google", slug: "pro" },
+		{ id: "gemini-3.5-flash", backend: "google", slug: "flash" },
 	],
 } satisfies GatewayConfig;
 
@@ -35,7 +35,7 @@ const googleBackend: GoogleBackend = {
 };
 
 // Module-scope slug maps so tests stay free of inline conditionals.
-const SLUGS: Record<string, string> = { "gpt-5.1": "gpt-mini", "gemini-2.5-pro": "pro" };
+const SLUGS: Record<string, string> = { "gpt-5.6": "gpt-mini", "gemini-3.5-flash": "flash" };
 const slugFor = (model: string): string => SLUGS[model] ?? model;
 const identitySlug = (model: string): string => model;
 
@@ -54,13 +54,13 @@ describe("createGatewayProvider", () => {
 	it("routes the core backends (anthropic, openai, google) by model id", () => {
 		const gateway = createGatewayProvider(config);
 		expect(gateway("claude-sonnet-4-6").provider).toMatch(/anthropic/u);
-		expect(gateway("gpt-5.1").provider).toMatch(/openai/u);
-		expect(gateway("gemini-2.5-pro").provider).toMatch(/google/u);
+		expect(gateway("gpt-5.6").provider).toMatch(/openai/u);
+		expect(gateway("gemini-3.5-flash").provider).toMatch(/google/u);
 	});
 
 	it("routes the added backends (openai-compatible, mistral, groq) by model id", () => {
 		const gateway = createGatewayProvider(config);
-		expect(gateway("llama-3.3-70b").provider).toMatch(/gateway/u);
+		expect(gateway("gpt-oss-120b").provider).toMatch(/gateway/u);
 		expect(gateway("mistral-large-latest").provider).toMatch(/mistral/u);
 		expect(gateway("moonshotai/kimi-k2").provider).toMatch(/groq/u);
 	});
@@ -68,7 +68,7 @@ describe("createGatewayProvider", () => {
 	it("exposes equivalent languageModel and chat surfaces", () => {
 		const gateway = createGatewayProvider(config);
 		expect(gateway.languageModel("claude-sonnet-4-6").modelId).toBe("claude-sonnet-4-6");
-		expect(gateway.chat("gpt-5.1").modelId).toBe("gpt-5.1");
+		expect(gateway.chat("gpt-5.6").modelId).toBe("gpt-5.6");
 	});
 
 	it("throws for a model id that is not in the config", () => {
@@ -94,7 +94,7 @@ describe("createBodyModelFetch", () => {
 
 		await fetchImpl(`https://gw/openai/${MODEL_SLUG_PLACEHOLDER}/chat/completions`, {
 			method: "POST",
-			body: JSON.stringify({ model: "gpt-5.1" }),
+			body: JSON.stringify({ model: "gpt-5.6" }),
 		});
 
 		expect(calls[0]).toBe("https://gw/openai/gpt-mini/chat/completions");
@@ -116,10 +116,10 @@ describe("createGeminiFetch", () => {
 		const fetchImpl = createGeminiFetch("https://gw/v1", googleBackend, slugFor);
 
 		await fetchImpl(
-			"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse",
+			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse",
 		);
 
-		expect(calls[0]).toBe("https://gw/v1/google/pro:customStreamGenerateContent?alt=sse");
+		expect(calls[0]).toBe("https://gw/v1/google/flash:customStreamGenerateContent?alt=sse");
 	});
 
 	it("passes the method through unchanged when it is not in actionMap", async () => {
@@ -127,10 +127,10 @@ describe("createGeminiFetch", () => {
 		const fetchImpl = createGeminiFetch("https://gw/v1", googleBackend, identitySlug);
 
 		await fetchImpl(
-			"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
 		);
 
-		expect(calls[0]).toBe("https://gw/v1/google/gemini-2.5-pro:generateContent");
+		expect(calls[0]).toBe("https://gw/v1/google/gemini-3.5-flash:generateContent");
 	});
 });
 

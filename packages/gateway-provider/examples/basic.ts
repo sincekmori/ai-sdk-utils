@@ -26,11 +26,11 @@ const inline = createGatewayProvider({
 			actionMap: { streamGenerateContent: "customStreamGenerateContent" },
 		},
 	},
-	models: [{ id: "gemini-2.5-pro", backend: "google", slug: "pro" }],
+	models: [{ id: "gemini-3.5-flash", backend: "google", slug: "flash" }],
 });
 
 await generateText({
-	model: inline("gemini-2.5-pro"),
+	model: inline("gemini-3.5-flash"),
 	prompt: "Summarize today's AI news.",
 });
 

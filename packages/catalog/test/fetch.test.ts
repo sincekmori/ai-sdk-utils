@@ -9,7 +9,7 @@ const googleBackend: GoogleBackend = {
 };
 
 // Module-scope slug maps so tests stay free of inline conditionals.
-const SLUGS: Record<string, string> = { "gpt-5.1": "gpt-mini", "gemini-2.5-pro": "pro" };
+const SLUGS: Record<string, string> = { "gpt-5.6": "gpt-mini", "gemini-3.5-flash": "flash" };
 const slugFor = (model: string): string => SLUGS[model] ?? model;
 const identitySlug = (model: string): string => model;
 
@@ -30,7 +30,7 @@ describe("createBodyModelFetch", () => {
 
 		await fetchImpl(`https://gw/openai/${MODEL_SLUG_PLACEHOLDER}/chat/completions`, {
 			method: "POST",
-			body: JSON.stringify({ model: "gpt-5.1" }),
+			body: JSON.stringify({ model: "gpt-5.6" }),
 		});
 
 		expect(calls[0]).toBe("https://gw/openai/gpt-mini/chat/completions");
@@ -52,10 +52,10 @@ describe("createGeminiFetch", () => {
 		const fetchImpl = createGeminiFetch("https://gw/v1", googleBackend, slugFor);
 
 		await fetchImpl(
-			"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse",
+			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse",
 		);
 
-		expect(calls[0]).toBe("https://gw/v1/google/pro:customStreamGenerateContent?alt=sse");
+		expect(calls[0]).toBe("https://gw/v1/google/flash:customStreamGenerateContent?alt=sse");
 	});
 
 	it("passes the method through unchanged when it is not in actionMap", async () => {
@@ -63,9 +63,9 @@ describe("createGeminiFetch", () => {
 		const fetchImpl = createGeminiFetch("https://gw/v1", googleBackend, identitySlug);
 
 		await fetchImpl(
-			"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
 		);
 
-		expect(calls[0]).toBe("https://gw/v1/google/gemini-2.5-pro:generateContent");
+		expect(calls[0]).toBe("https://gw/v1/google/gemini-3.5-flash:generateContent");
 	});
 });

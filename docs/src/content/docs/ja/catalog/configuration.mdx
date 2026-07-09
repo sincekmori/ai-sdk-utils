@@ -48,7 +48,7 @@ export const withUserSchemaPath = (raw) =>
 <Code code={withUserSchemaPath(standard)} lang="json" title="ai-sdk-catalog.standard.json" />
 
 - `openai` プロバイダの `settings` ブロックは、そのすべてのモデルに継承される呼び出し設定の
-  既定値です。`gpt-5.1-mini` は自分だけ `temperature` を上書きしています。設定はモデルハンドルに
+  既定値です。`gpt-5.6-luna` は自分だけ `temperature` を上書きしています。設定はモデルハンドルに
   焼き込まれますが、呼び出しごとの上書きも可能です。
 - `ollama` プロバイダはエンドポイント上書きの例です: `vendor: "openai"` と `baseURL` の組み合わせで
   任意の OpenAI 互換サーバーに接続できます。このサーバーは Responses API ではなく Chat Completions を
@@ -68,7 +68,7 @@ export const withUserSchemaPath = (raw) =>
   指名します。`pathTemplate` 内の `{slug}` はモデルの `slug`(無ければ `id`)に置換されます。
   `google` バックエンドはモデルが URL 側に載るためパス全体が書き換えられ、ストリーミング/
   非ストリーミングのアクション切り替えも `actionMap` で扱えます。
-- モデル単位の `settings` はプロバイダの設定にマージされます: `gpt-5.1-mini` は継承した
+- モデル単位の `settings` はプロバイダの設定にマージされます: `gpt-5.6-luna` は継承した
   `maxOutputTokens` と `reasoningEffort` を保ったまま、`temperature` を上書きし
   `parallelToolCalls` を追加しています。
 
