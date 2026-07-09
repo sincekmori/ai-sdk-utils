@@ -12,26 +12,26 @@ import { createGatewayProvider } from "ai-sdk-gateway-provider";
 import { generateText } from "ai";
 
 const gateway = createGatewayProvider({
-	baseURL: "https://gateway.example.com/v1",
-	// apiKey defaults to process.env.AI_GATEWAY_API_KEY
-	backends: {
-		anthropic: { pathTemplate: "anthropic/{slug}" },
-		openai: { pathTemplate: "openai/{slug}" },
-		google: {
-			pathTemplate: "google/{slug}:{action}",
-			actionMap: { streamGenerateContent: "customStreamGenerateContent" },
-		},
-	},
-	models: [
-		{ id: "claude-sonnet-4-6", backend: "anthropic" },
-		{ id: "gpt-5.1", backend: "openai" },
-		{ id: "gemini-2.5-pro", backend: "google", slug: "pro" },
-	],
+  baseURL: "https://gateway.example.com/v1",
+  // apiKey defaults to process.env.AI_GATEWAY_API_KEY
+  backends: {
+    anthropic: { pathTemplate: "anthropic/{slug}" },
+    openai: { pathTemplate: "openai/{slug}" },
+    google: {
+      pathTemplate: "google/{slug}:{action}",
+      actionMap: { streamGenerateContent: "customStreamGenerateContent" },
+    },
+  },
+  models: [
+    { id: "claude-sonnet-4-6", backend: "anthropic" },
+    { id: "gpt-5.1", backend: "openai" },
+    { id: "gemini-2.5-pro", backend: "google", slug: "pro" },
+  ],
 });
 
 const { text } = await generateText({
-	model: gateway("claude-sonnet-4-6"), // routed to the anthropic backend
-	prompt: "Hello!",
+  model: gateway("claude-sonnet-4-6"), // routed to the anthropic backend
+  prompt: "Hello!",
 });
 ```
 
@@ -92,9 +92,9 @@ The underlying provider instances are exposed for tools and typed provider metad
 
 ```ts
 await generateText({
-	model: gateway("gemini-2.5-pro"),
-	tools: { web_search: gateway.google.tools.googleSearch({}) },
-	prompt: "What changed recently?",
+  model: gateway("gemini-2.5-pro"),
+  tools: { web_search: gateway.google.tools.googleSearch({}) },
+  prompt: "What changed recently?",
 });
 ```
 
@@ -108,7 +108,7 @@ Embeddings and image models are reached the same way, e.g. `gateway.openai.textE
 import { createCatalog, loadConfig } from "ai-sdk-catalog";
 
 const catalog = createCatalog(await loadConfig("./models.yaml"), (_provider, modelId) =>
-	gateway(modelId),
+  gateway(modelId),
 );
 
 await generateText({ model: catalog.modelForRole("chat"), prompt: "..." });

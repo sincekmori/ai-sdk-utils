@@ -18,8 +18,8 @@ import { createLocalFetch } from "ai-sdk-local-fetch";
 import { openai } from "@ai-sdk/openai";
 
 const fetch = createLocalFetch({
-	model: openai("gpt-5.2-chat"),
-	system: "You are a helpful assistant.",
+  model: openai("gpt-5.2-chat"),
+  system: "You are a helpful assistant.",
 });
 ```
 
@@ -31,15 +31,15 @@ import { createLocalFetch } from "ai-sdk-local-fetch";
 import { openai } from "@ai-sdk/openai";
 
 function Assistant({ apiKey }: { apiKey: string }) {
-	const runtime = useChatRuntime({
-		transport: new AssistantChatTransport({
-			fetch: createLocalFetch({
-				model: openai("gpt-5.2-chat", { apiKey }),
-				system: "You are a helpful assistant.",
-			}),
-		}),
-	});
+  const runtime = useChatRuntime({
+    transport: new AssistantChatTransport({
+      fetch: createLocalFetch({
+        model: openai("gpt-5.2-chat", { apiKey }),
+        system: "You are a helpful assistant.",
+      }),
+    }),
+  });
 
-	// ...
+  // ...
 }
 ```

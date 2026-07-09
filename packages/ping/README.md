@@ -23,7 +23,7 @@ const model = openai("gpt-5.2-chat");
 const reachable = await ping(model);
 
 if (reachable) {
-	// `model` is verified reachable — reuse it with confidence.
+  // `model` is verified reachable — reuse it with confidence.
 }
 ```
 
