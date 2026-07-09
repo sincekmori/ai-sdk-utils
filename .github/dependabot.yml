@@ -6,6 +6,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Only propose versions at least 7 days old. Also keeps proposals clear of
+    # pnpm 11's default minimumReleaseAge (24h) supply-chain check in CI.
+    # Note: security updates ignore the cooldown by design.
+    cooldown:
+      default-days: 7
     groups:
       npm:
         patterns: ["*"]
@@ -15,6 +20,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ["*"]
