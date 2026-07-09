@@ -1,5 +1,34 @@
 # ai-sdk-catalog
 
+## 0.5.0
+
+### Minor Changes
+
+- e2da392: Ship the config file's JSON Schema as `schema.json` in the package (exported as `ai-sdk-catalog/schema.json`). Point a config's `"$schema"` at `./node_modules/ai-sdk-catalog/schema.json` — or a versioned CDN URL such as `https://cdn.jsdelivr.net/npm/ai-sdk-catalog@<version>/schema.json` — for editor validation and autocompletion. Also add JSON example configs at three sizes under `examples/`.
+- e2da392: **Breaking:** drop YAML support to keep the package lean — the `yaml` dependency is gone and the documented config format is JSON. To keep loading YAML configs, parse them yourself and hand the object to `createCatalog`:
+
+  ```ts
+  import { readFile } from "node:fs/promises";
+  import { parse } from "yaml";
+
+  const text = await readFile("./ai-sdk-catalog.yaml", "utf8");
+  const config = parse(text);
+  const catalog = createCatalog(config);
+  ```
+
+- e2da392: **Breaking:** config loading collapses into `createCatalog`, which now validates its input itself and throws a readable issue list when it is invalid. `parseConfig`, `parseConfigString`, and `loadConfig` are removed — read the file however you like and hand the parsed object over:
+
+  ```ts
+  import { readFile } from "node:fs/promises";
+  import { createCatalog } from "ai-sdk-catalog";
+
+  const text = await readFile("./ai-sdk-catalog.json", "utf8");
+  const config = JSON.parse(text);
+  const catalog = createCatalog(config);
+  ```
+
+  With `loadConfig` gone the package no longer touches `node:fs` at all, so every entry point is runtime-agnostic.
+
 ## 0.4.0
 
 ### Minor Changes
