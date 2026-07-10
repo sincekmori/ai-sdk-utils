@@ -23,6 +23,19 @@ function recordFetch(): string[] {
 	return calls;
 }
 
+// Records calls to a user-supplied fetch instead of globalThis.fetch.
+function recorder(): { calls: { url: string; body?: BodyInit | null }[]; fetch: typeof fetch } {
+	const calls: { url: string; body?: BodyInit | null }[] = [];
+	const fetchImpl: typeof fetch = (input, init) => {
+		calls.push({
+			url: input instanceof Request ? input.url : input.toString(),
+			body: init?.body,
+		});
+		return Promise.resolve(new Response("{}", { status: 200 }));
+	};
+	return { calls, fetch: fetchImpl };
+}
+
 describe("createBodyModelFetch", () => {
 	it("substitutes the model slug into a fixed-path URL read from the request body", async () => {
 		const calls = recordFetch();
@@ -49,7 +62,7 @@ describe("createBodyModelFetch", () => {
 describe("createGeminiFetch", () => {
 	it("rewrites the models URL to the gateway layout, renames the action, and keeps the query", async () => {
 		const calls = recordFetch();
-		const fetchImpl = createGeminiFetch("https://gw/v1", googleBackend, slugFor);
+		const fetchImpl = createGeminiFetch("https://gw/v1", googleBackend, { slugFor });
 
 		await fetchImpl(
 			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse",
@@ -60,12 +73,57 @@ describe("createGeminiFetch", () => {
 
 	it("passes the method through unchanged when it is not in actionMap", async () => {
 		const calls = recordFetch();
-		const fetchImpl = createGeminiFetch("https://gw/v1", googleBackend, identitySlug);
+		const fetchImpl = createGeminiFetch("https://gw/v1", googleBackend, {
+			slugFor: identitySlug,
+		});
 
 		await fetchImpl(
 			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
 		);
 
 		expect(calls[0]).toBe("https://gw/v1/google/gemini-3.5-flash:generateContent");
+	});
+});
+
+describe("custom base fetch", () => {
+	it("createBodyModelFetch routes the rewritten request through baseFetch, not the global", async () => {
+		const globalCalls = recordFetch();
+		const { calls, fetch: baseFetch } = recorder();
+		const fetchImpl = createBodyModelFetch(slugFor, baseFetch);
+
+		await fetchImpl(`https://gw/openai/${MODEL_SLUG_PLACEHOLDER}/chat/completions`, {
+			method: "POST",
+			body: JSON.stringify({ model: "gpt-5.6" }),
+		});
+
+		expect(calls[0]?.url).toBe("https://gw/openai/gpt-mini/chat/completions");
+		expect(globalCalls).toHaveLength(0);
+	});
+
+	it("createBodyModelFetch uses baseFetch on the passthrough path too", async () => {
+		const globalCalls = recordFetch();
+		const { calls, fetch: baseFetch } = recorder();
+		const fetchImpl = createBodyModelFetch(identitySlug, baseFetch);
+
+		await fetchImpl("https://gw/health", { method: "GET" });
+
+		expect(calls[0]?.url).toBe("https://gw/health");
+		expect(globalCalls).toHaveLength(0);
+	});
+
+	it("createGeminiFetch hands baseFetch the final gateway URL and the untouched body", async () => {
+		const globalCalls = recordFetch();
+		const { calls, fetch: baseFetch } = recorder();
+		const fetchImpl = createGeminiFetch("https://gw/v1", googleBackend, { slugFor, baseFetch });
+
+		const body = JSON.stringify({ contents: [] });
+		await fetchImpl(
+			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+			{ method: "POST", body },
+		);
+
+		expect(calls[0]?.url).toBe("https://gw/v1/google/flash:generateContent");
+		expect(calls[0]?.body).toBe(body);
+		expect(globalCalls).toHaveLength(0);
 	});
 });

@@ -18,21 +18,38 @@ export const MODEL_SLUG_PLACEHOLDER = "__ai_sdk_catalog_model_slug__";
  * URL path is fixed per provider instance, so the model is read from the request
  * body and the {@link MODEL_SLUG_PLACEHOLDER} in the URL is rewritten to the
  * model's slug.
+ *
+ * `baseFetch` is the fetch the rewritten request is sent through (default:
+ * `globalThis.fetch`, resolved per request so later global patches still apply);
+ * it sees the final gateway URL and body.
  */
-export function createBodyModelFetch(slugFor: (model: string) => string): FetchFunction {
+export function createBodyModelFetch(
+	slugFor: (model: string) => string,
+	baseFetch?: FetchFunction,
+): FetchFunction {
 	return (input, init) => {
+		const doFetch = baseFetch ?? globalThis.fetch;
 		const requestUrl = input instanceof Request ? input.url : input.toString();
 		if (typeof init?.body === "string" && requestUrl.includes(MODEL_SLUG_PLACEHOLDER)) {
 			const { model } = JSON.parse(init.body) as { model?: string };
 			if (model !== undefined && model !== "") {
-				return globalThis.fetch(
-					requestUrl.replaceAll(MODEL_SLUG_PLACEHOLDER, slugFor(model)),
-					init,
-				);
+				return doFetch(requestUrl.replaceAll(MODEL_SLUG_PLACEHOLDER, slugFor(model)), init);
 			}
 		}
-		return globalThis.fetch(input, init);
+		return doFetch(input, init);
 	};
+}
+
+/** Options for {@link createGeminiFetch}. */
+export interface GeminiFetchOptions {
+	/** Maps a model id to the slug substituted into the gateway path. */
+	slugFor: (model: string) => string;
+	/**
+	 * Fetch the rewritten request is sent through (default: `globalThis.fetch`,
+	 * resolved per request so later global patches still apply); it sees the
+	 * final gateway URL and body.
+	 */
+	baseFetch?: FetchFunction;
 }
 
 /**
@@ -45,13 +62,15 @@ export function createBodyModelFetch(slugFor: (model: string) => string): FetchF
 export function createGeminiFetch(
 	baseURL: string,
 	backend: GoogleBackend,
-	slugFor: (model: string) => string,
+	options: GeminiFetchOptions,
 ): FetchFunction {
+	const { slugFor, baseFetch } = options;
 	return (input, init) => {
+		const doFetch = baseFetch ?? globalThis.fetch;
 		const requestUrl = new URL(input instanceof Request ? input.url : input.toString());
 		const match = /\/models\/(?<model>[^:]+):(?<method>\w+)/u.exec(requestUrl.pathname);
 		if (!match?.groups) {
-			return globalThis.fetch(input, init);
+			return doFetch(input, init);
 		}
 		const { model, method } = match.groups;
 		const action = backend.actionMap?.[method] ?? method;
@@ -59,6 +78,6 @@ export function createGeminiFetch(
 			.replace(/^\/+/u, "")
 			.replaceAll("{slug}", slugFor(model))
 			.replaceAll("{action}", action);
-		return globalThis.fetch(`${baseURL}/${path}${requestUrl.search}`, init);
+		return doFetch(`${baseURL}/${path}${requestUrl.search}`, init);
 	};
 }

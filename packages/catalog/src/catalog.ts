@@ -1,6 +1,7 @@
 // Copyright 2026 Shinsuke Mori
 // SPDX-License-Identifier: Apache-2.0
 
+import type { FetchFunction } from "@ai-sdk/provider-utils";
 import { defaultSettingsMiddleware, type LanguageModel, wrapLanguageModel } from "ai";
 import * as z from "zod";
 
@@ -71,6 +72,15 @@ export interface CatalogOptions {
 	 * `gateway` block.
 	 */
 	resolvers?: Record<string, ProviderResolver>;
+	/**
+	 * Base fetch every provider's HTTP requests are sent through (default:
+	 * `globalThis.fetch`). For gateway providers it runs *after* the gateway
+	 * path rewriting, so it sees the final gateway URL and body — the place to
+	 * add logging, auth, or a gateway-specific payload adjustment without
+	 * patching `globalThis.fetch`. Resolver-backed providers are not affected
+	 * (their resolver builds its own models).
+	 */
+	fetch?: FetchFunction;
 }
 
 /**
@@ -150,7 +160,10 @@ export function createCatalog(config: Config, options: CatalogOptions = {}): Cat
 		} else if (provider.gateway) {
 			runtimeByProvider.set(
 				provider.id,
-				createGatewayRuntime(provider.id, provider.gateway, provider.models),
+				createGatewayRuntime(provider.id, provider.gateway, {
+					models: provider.models,
+					baseFetch: options.fetch,
+				}),
 			);
 		} else {
 			const vendor = provider.vendor ?? provider.id;
@@ -161,12 +174,16 @@ export function createCatalog(config: Config, options: CatalogOptions = {}): Cat
 			}
 			runtimeByProvider.set(
 				provider.id,
-				createDirectRuntime(vendor, {
-					baseURL: provider.baseURL,
-					apiKey: provider.apiKey,
-					apiKeyEnvVarName: provider.apiKeyEnvVarName,
-					name: provider.name,
-				}),
+				createDirectRuntime(
+					vendor,
+					{
+						baseURL: provider.baseURL,
+						apiKey: provider.apiKey,
+						apiKeyEnvVarName: provider.apiKeyEnvVarName,
+						name: provider.name,
+					},
+					options.fetch,
+				),
 			);
 		}
 
@@ -240,3 +257,7 @@ export function createCatalog(config: Config, options: CatalogOptions = {}): Cat
 		provider: providerInstance,
 	};
 }
+
+// Re-exported so callers can type a custom `CatalogOptions.fetch` without
+// depending on `@ai-sdk/provider-utils` themselves.
+export type { FetchFunction } from "@ai-sdk/provider-utils";

@@ -1,7 +1,7 @@
 // Copyright 2026 Shinsuke Mori
 // SPDX-License-Identifier: Apache-2.0
 
-import { loadApiKey, withoutTrailingSlash } from "@ai-sdk/provider-utils";
+import { type FetchFunction, loadApiKey, withoutTrailingSlash } from "@ai-sdk/provider-utils";
 import type { LanguageModel } from "ai";
 
 import type { GatewayOptions } from "./backends.ts";
@@ -21,6 +21,17 @@ export interface ProviderRuntime {
 	instance?(modelId: string): VendorProvider | undefined;
 }
 
+/** Options for {@link createGatewayRuntime}. */
+export interface GatewayRuntimeOptions {
+	/** The provider's models (backend routing + slugs come from these). */
+	models: Model[];
+	/**
+	 * Fetch every backend's requests go through, *after* the gateway path
+	 * rewriting — it sees the final gateway URL and body.
+	 */
+	baseFetch?: FetchFunction;
+}
+
 /**
  * Builds the runtime for a gateway provider: every model routes through one
  * gateway endpoint to the right upstream backend. Sub-providers are built lazily
@@ -35,8 +46,9 @@ export interface ProviderRuntime {
 export function createGatewayRuntime(
 	providerId: string,
 	gateway: GatewayOptions,
-	models: Model[],
+	options: GatewayRuntimeOptions,
 ): ProviderRuntime {
+	const { models, baseFetch } = options;
 	const baseURL = withoutTrailingSlash(gateway.baseURL) ?? gateway.baseURL;
 	const getApiKey = (): string =>
 		loadApiKey({
@@ -54,7 +66,7 @@ export function createGatewayRuntime(
 		slugOf.set(m.id, m.slug ?? m.id);
 	}
 	const slugFor = (model: string): string => slugOf.get(model) ?? model;
-	const bodyModelFetch = createBodyModelFetch(slugFor);
+	const bodyModelFetch = createBodyModelFetch(slugFor, baseFetch);
 
 	const fixedPathBaseURL = (pathTemplate: string): string =>
 		`${baseURL}/${pathTemplate.replace(/^\/+/u, "").replaceAll("{slug}", MODEL_SLUG_PLACEHOLDER)}`;
@@ -76,7 +88,7 @@ export function createGatewayRuntime(
 				? createVendor("google", {
 						baseURL,
 						apiKey: getApiKey(),
-						fetch: createGeminiFetch(baseURL, cfg, slugFor),
+						fetch: createGeminiFetch(baseURL, cfg, { slugFor, baseFetch }),
 					})
 				: createVendor(backend, {
 						baseURL: fixedPathBaseURL(cfg.pathTemplate),
@@ -109,10 +121,13 @@ export function createGatewayRuntime(
  * is built lazily and memoized; the API key is taken from `apiKey` /
  * `apiKeyEnvVarName` when given, otherwise the vendor SDK's own default
  * (e.g. `OPENAI_API_KEY`).
+ *
+ * `baseFetch` (when given) is handed to the vendor SDK as its `fetch`.
  */
 export function createDirectRuntime(
 	vendor: Vendor,
 	options: { baseURL?: string; apiKey?: string; apiKeyEnvVarName?: string; name?: string },
+	baseFetch?: FetchFunction,
 ): ProviderRuntime {
 	let provider: VendorProvider | undefined = undefined;
 	const get = (): VendorProvider => {
@@ -125,7 +140,12 @@ export function createDirectRuntime(
 							description: `provider vendor "${vendor}"`,
 						})
 					: undefined;
-			provider = createVendor(vendor, { apiKey, baseURL: options.baseURL, name: options.name });
+			provider = createVendor(vendor, {
+				apiKey,
+				baseURL: options.baseURL,
+				fetch: baseFetch,
+				name: options.name,
+			});
 		}
 		return provider;
 	};
