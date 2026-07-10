@@ -1,6 +1,6 @@
 {
   "name": "ai-sdk-catalog",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Manage Vercel AI SDK providers, models, and roles from one declarative config file — direct vendors or your own LLM gateway, batteries included.",
   "keywords": [
     "ai",
