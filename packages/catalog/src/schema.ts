@@ -5,6 +5,8 @@ import type { LanguageModel } from "ai";
 import * as z from "zod";
 
 import { GatewayOptions } from "./backends.ts";
+import { QueryParams, RequestHeaders } from "./headers.ts";
+import { configInvariants } from "./invariants.ts";
 
 /**
  * Single source of truth for LLM providers, their models, and the role
@@ -134,6 +136,12 @@ export const Provider = z.object({
 	apiKey: z.string().optional(),
 	apiKeyEnvVarName: z.string().min(1).optional(),
 	name: z.string().min(1).optional(), // openai-compatible metadata name
+	// Extra headers sent with every request (merged over the vendor SDK's own,
+	// same-name wins). An inline value may embed the key via "{apiKey}";
+	// `{ "envVarName": "..." }` reads the value from that environment variable.
+	headers: RequestHeaders.optional(),
+	// Query params appended to every request URL, e.g. { "api-version": "..." }.
+	query: QueryParams.optional(),
 	// Gateway field:
 	gateway: GatewayOptions.optional(),
 	// Default call settings inherited by every model in this provider. Each
@@ -153,123 +161,15 @@ export type RoleRef = z.infer<typeof RoleRef>;
 /**
  * Structural validation lives in the field schemas above. Whole-config
  * invariants (uniqueness, gateway/backend coherence, referential integrity)
- * live in the refinement below, where the full object is available.
+ * need the full object, so they live in `configInvariants` (see invariants.ts),
+ * wired in as the refinement here.
  */
 export const Config = z
 	.object({
 		providers: z.array(Provider).min(1),
 		roles: z.record(z.string(), RoleRef), // role name -> { provider, model }
 	})
-	.superRefine((cfg, ctx) => {
-		// 1. provider id uniqueness, model id uniqueness, and per-kind coherence
-		const providerIds = new Set<string>();
-		for (const [i, p] of cfg.providers.entries()) {
-			if (providerIds.has(p.id)) {
-				ctx.addIssue({
-					code: "custom",
-					message: `Duplicate provider id "${p.id}".`,
-					path: ["providers", i, "id"],
-					input: p.id,
-				});
-			}
-			providerIds.add(p.id);
-
-			const isGateway = p.gateway !== undefined;
-			if (isGateway) {
-				// A gateway provider configures its endpoint/key inside the `gateway`
-				// block; the direct-vendor fields don't apply and would be ignored.
-				for (const field of ["vendor", "baseURL", "apiKey", "apiKeyEnvVarName", "name"] as const) {
-					if (p[field] !== undefined) {
-						ctx.addIssue({
-							code: "custom",
-							message: `Provider "${p.id}" sets "${field}" alongside "gateway"; put it inside the "gateway" block, or drop the "gateway" block.`,
-							path: ["providers", i, field],
-							input: p[field],
-						});
-					}
-				}
-			} else if ((p.vendor ?? p.id) === "openai-compatible" && p.baseURL === undefined) {
-				// The OpenAI-compatible vendor has no canonical endpoint.
-				ctx.addIssue({
-					code: "custom",
-					message: `Provider "${p.id}" uses the "openai-compatible" vendor and must set a "baseURL".`,
-					path: ["providers", i, "baseURL"],
-					input: p.baseURL,
-				});
-			}
-
-			const modelIds = new Set<string>();
-			for (const [j, m] of p.models.entries()) {
-				if (modelIds.has(m.id)) {
-					ctx.addIssue({
-						code: "custom",
-						message: `Duplicate model id "${m.id}" in provider "${p.id}".`,
-						path: ["providers", i, "models", j, "id"],
-						input: m.id,
-					});
-				}
-				modelIds.add(m.id);
-
-				if (isGateway) {
-					// gateway model must name a backend, and that backend must be configured
-					if (m.backend === undefined) {
-						ctx.addIssue({
-							code: "custom",
-							message: `Model "${m.id}" in gateway provider "${p.id}" must set a "backend".`,
-							path: ["providers", i, "models", j, "backend"],
-							input: m,
-						});
-					} else if (!p.gateway?.backends[m.backend]) {
-						ctx.addIssue({
-							code: "custom",
-							message: `Model "${m.id}" uses backend "${m.backend}", but "${p.id}.gateway.backends.${m.backend}" is not configured.`,
-							path: ["providers", i, "models", j, "backend"],
-							input: m.backend,
-						});
-					}
-				} else {
-					// direct/resolver model must not carry gateway-only fields
-					if (m.backend !== undefined) {
-						ctx.addIssue({
-							code: "custom",
-							message: `Model "${m.id}" sets "backend", but provider "${p.id}" has no "gateway" block.`,
-							path: ["providers", i, "models", j, "backend"],
-							input: m.backend,
-						});
-					}
-					if (m.slug !== undefined) {
-						ctx.addIssue({
-							code: "custom",
-							message: `Model "${m.id}" sets "slug", but provider "${p.id}" has no "gateway" block.`,
-							path: ["providers", i, "models", j, "slug"],
-							input: m.slug,
-						});
-					}
-				}
-			}
-		}
-
-		// 2. every role must reference an existing provider+model
-		const index = new Map(cfg.providers.map((p) => [p.id, new Set(p.models.map((m) => m.id))]));
-		for (const [role, ref] of Object.entries(cfg.roles)) {
-			const models = index.get(ref.provider);
-			if (!models) {
-				ctx.addIssue({
-					code: "custom",
-					message: `Role "${role}" references unknown provider "${ref.provider}".`,
-					path: ["roles", role, "provider"],
-					input: ref.provider,
-				});
-			} else if (!models.has(ref.model)) {
-				ctx.addIssue({
-					code: "custom",
-					message: `Role "${role}" references unknown model "${ref.provider}:${ref.model}".`,
-					path: ["roles", role, "model"],
-					input: ref.model,
-				});
-			}
-		}
-	});
+	.superRefine(configInvariants);
 
 export type Config = z.infer<typeof Config>;
 

@@ -57,6 +57,15 @@
       "gateway": {
         "baseURL": "https://gateway.example.com/v1",
         "apiKeyEnvVarName": "ACME_API_KEY",
+        "headers": {
+          "Authorization": "Bearer {apiKey}",
+          "Ocp-Apim-Subscription-Key": {
+            "envVarName": "ACME_SUBSCRIPTION_KEY"
+          }
+        },
+        "query": {
+          "api-version": "2026-01-01"
+        },
         "backends": {
           "anthropic": {
             "pathTemplate": "anthropic/{slug}"

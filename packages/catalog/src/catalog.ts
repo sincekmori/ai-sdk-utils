@@ -181,6 +181,8 @@ export function createCatalog(config: Config, options: CatalogOptions = {}): Cat
 						apiKey: provider.apiKey,
 						apiKeyEnvVarName: provider.apiKeyEnvVarName,
 						name: provider.name,
+						headers: provider.headers,
+						query: provider.query,
 					},
 					options.fetch,
 				),

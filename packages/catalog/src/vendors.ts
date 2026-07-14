@@ -34,6 +34,12 @@ export interface VendorOptions {
 	apiKey?: string;
 	baseURL?: string;
 	fetch?: FetchFunction;
+	/**
+	 * Extra request headers, already resolved to concrete values. Merged over
+	 * the vendor SDK's own headers (same-name wins), so an explicit auth header
+	 * here overrides the SDK's default one.
+	 */
+	headers?: Record<string, string>;
 	/** Metadata namespace for `openai-compatible` (defaults to the vendor name). */
 	name?: string;
 }
@@ -49,13 +55,13 @@ export function isVendor(value: string): value is Vendor {
  * `baseURL` plus a request-rewriting `fetch`).
  */
 export function createVendor(vendor: Vendor, options: VendorOptions): VendorProvider {
-	const { apiKey, baseURL, fetch, name } = options;
+	const { apiKey, baseURL, fetch, headers, name } = options;
 	switch (vendor) {
 		case "anthropic": {
-			return createAnthropic({ apiKey, baseURL, fetch });
+			return createAnthropic({ apiKey, baseURL, fetch, headers });
 		}
 		case "openai": {
-			return createOpenAI({ apiKey, baseURL, fetch });
+			return createOpenAI({ apiKey, baseURL, fetch, headers });
 		}
 		case "openai-compatible": {
 			return createOpenAICompatible({
@@ -63,28 +69,29 @@ export function createVendor(vendor: Vendor, options: VendorOptions): VendorProv
 				baseURL: baseURL ?? "",
 				apiKey,
 				fetch,
+				headers,
 			});
 		}
 		case "mistral": {
-			return createMistral({ apiKey, baseURL, fetch });
+			return createMistral({ apiKey, baseURL, fetch, headers });
 		}
 		case "cohere": {
-			return createCohere({ apiKey, baseURL, fetch });
+			return createCohere({ apiKey, baseURL, fetch, headers });
 		}
 		case "groq": {
-			return createGroq({ apiKey, baseURL, fetch });
+			return createGroq({ apiKey, baseURL, fetch, headers });
 		}
 		case "xai": {
-			return createXai({ apiKey, baseURL, fetch });
+			return createXai({ apiKey, baseURL, fetch, headers });
 		}
 		case "deepseek": {
-			return createDeepSeek({ apiKey, baseURL, fetch });
+			return createDeepSeek({ apiKey, baseURL, fetch, headers });
 		}
 		case "perplexity": {
-			return createPerplexity({ apiKey, baseURL, fetch });
+			return createPerplexity({ apiKey, baseURL, fetch, headers });
 		}
 		case "google": {
-			return createGoogleGenerativeAI({ apiKey, baseURL, fetch });
+			return createGoogleGenerativeAI({ apiKey, baseURL, fetch, headers });
 		}
 		default: {
 			// Unreachable: `vendor` is exhaustively a {@link Vendor}. Defensive only.

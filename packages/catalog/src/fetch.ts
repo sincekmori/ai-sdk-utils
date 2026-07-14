@@ -4,6 +4,7 @@
 import type { FetchFunction } from "@ai-sdk/provider-utils";
 
 import type { GoogleBackend } from "./backends.ts";
+import type { QueryParams } from "./headers.ts";
 
 /**
  * Placeholder substituted into a fixed-path backend's `baseURL` in place of the
@@ -37,6 +38,25 @@ export function createBodyModelFetch(
 			}
 		}
 		return doFetch(input, init);
+	};
+}
+
+/**
+ * Wraps fetch to append the configured query parameters to every request URL
+ * (e.g. a gateway's mandatory `?api-version=...`). A parameter already present
+ * in the URL is overridden, so the config value wins deterministically.
+ *
+ * In a gateway chain this sits *inside* the path-rewriting fetch (it sees the
+ * final gateway URL) and *before* `baseFetch` / `globalThis.fetch`.
+ */
+export function createQueryFetch(query: QueryParams, baseFetch?: FetchFunction): FetchFunction {
+	return (input, init) => {
+		const doFetch = baseFetch ?? globalThis.fetch;
+		const url = new URL(input instanceof Request ? input.url : input.toString());
+		for (const [name, value] of Object.entries(query)) {
+			url.searchParams.set(name, value);
+		}
+		return doFetch(url.toString(), init);
 	};
 }
 

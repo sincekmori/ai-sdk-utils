@@ -85,6 +85,10 @@ function typeLabel(rawNode: SchemaNode, locale: Locale): string {
 	if (node.enum !== undefined) {
 		return "enum";
 	}
+	// A non-JSON-value union (e.g. a header value: string / { envVarName }).
+	if (node.anyOf !== undefined) {
+		return node.anyOf.map((entry) => typeLabel(entry, locale)).join(" / ");
+	}
 	if (node.type === "array") {
 		return node.items === undefined ? "array" : locale.arrayOf(typeLabel(node.items, locale));
 	}

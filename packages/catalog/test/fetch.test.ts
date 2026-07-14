@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { GoogleBackend } from "../src/backends.ts";
-import { createBodyModelFetch, createGeminiFetch, MODEL_SLUG_PLACEHOLDER } from "../src/fetch.ts";
+import {
+	createBodyModelFetch,
+	createGeminiFetch,
+	createQueryFetch,
+	MODEL_SLUG_PLACEHOLDER,
+} from "../src/fetch.ts";
 
 const googleBackend: GoogleBackend = {
 	pathTemplate: "google/{slug}:{action}",
@@ -82,6 +87,49 @@ describe("createGeminiFetch", () => {
 		);
 
 		expect(calls[0]).toBe("https://gw/v1/google/gemini-3.5-flash:generateContent");
+	});
+});
+
+describe("createQueryFetch", () => {
+	it("appends the configured query params to the request URL", async () => {
+		const calls = recordFetch();
+		const fetchImpl = createQueryFetch({ "api-version": "2026-01-01" });
+
+		await fetchImpl("https://gw/openai/chat/completions", { method: "POST" });
+
+		expect(calls[0]).toBe("https://gw/openai/chat/completions?api-version=2026-01-01");
+	});
+
+	it("keeps existing params and overrides a same-name one with the config value", async () => {
+		const calls = recordFetch();
+		const fetchImpl = createQueryFetch({ "api-version": "2026-01-01", alt: "json" });
+
+		await fetchImpl("https://gw/gemini/flash:generateContent?alt=sse&x=1");
+
+		// `x` is kept, `alt` is overridden in place (config wins), `api-version` appended.
+		expect(calls[0]).toBe(
+			"https://gw/gemini/flash:generateContent?alt=json&x=1&api-version=2026-01-01",
+		);
+	});
+
+	it("routes through baseFetch and composes after the slug rewrite", async () => {
+		const globalCalls = recordFetch();
+		const { calls, fetch: baseFetch } = recorder();
+		// The gateway chain: slug rewrite first, then query append, then baseFetch.
+		const fetchImpl = createBodyModelFetch(
+			slugFor,
+			createQueryFetch({ "api-version": "2026-01-01" }, baseFetch),
+		);
+
+		await fetchImpl(`https://gw/openai/${MODEL_SLUG_PLACEHOLDER}/chat/completions`, {
+			method: "POST",
+			body: JSON.stringify({ model: "gpt-5.6" }),
+		});
+
+		expect(calls[0]?.url).toBe(
+			"https://gw/openai/gpt-mini/chat/completions?api-version=2026-01-01",
+		);
+		expect(globalCalls).toHaveLength(0);
 	});
 });
 

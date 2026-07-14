@@ -122,6 +122,7 @@ Point it elsewhere with:
 - `baseURL` — a custom endpoint (e.g. a proxy).
 - `apiKey` / `apiKeyEnvVarName` — the key, or the env var to read it from. Omit both to use the vendor SDK's own default (e.g. `OPENAI_API_KEY`).
 - `name` — metadata namespace for `openai-compatible`.
+- `headers` / `query` — extra request headers and URL query parameters (see [Extra headers and query parameters](#extra-headers-and-query-parameters)).
 
 A model's `api` picks the call surface — `responses`, `chat`, or `completion`.
 Omit it for the vendor's default: **OpenAI defaults to the Responses API**, an OpenAI-compatible server to Chat Completions, and every other vendor to its single surface.
@@ -154,6 +155,43 @@ Add a `gateway` block to route a provider through a single gateway endpoint, eac
 `{slug}` is the model's `slug` (falling back to its `id`); every backend except `google` carries the model in the request body, so the path is fixed per backend and the slug is substituted at request time.
 For `google` the model is in the URL, which is rewritten to your layout — including the streaming/non-streaming action switch via `actionMap`.
 Regions and versions are just text in `baseURL` or a `pathTemplate`.
+
+### Extra headers and query parameters
+
+Enterprise gateways often need transport details beyond a bearer token — an APIM-style subscription-key header, tenant/routing headers, or a mandatory `?api-version=...` on every request.
+Direct providers, the `gateway` block, and each gateway backend all accept:
+
+- `headers` — extra request headers, merged over the vendor SDK's own (a same-name header overrides the SDK's — e.g. an explicit `x-api-key`). A value is either a **literal string**, in which `{apiKey}` is replaced with the resolved API key, or **`{ "envVarName": "..." }`** to read it from an environment variable — as lazily as the key itself, when a model of the provider is first used.
+- `query` — query parameters appended to every request URL (for a gateway, after the path rewriting). A parameter already in the URL is overridden. Values are plain text — don't put secrets in URLs; use a header instead.
+
+```json
+{
+  "providers": [
+    {
+      "id": "acme",
+      "gateway": {
+        "baseURL": "https://gateway.example.com/v1",
+        "apiKeyEnvVarName": "ACME_API_KEY",
+        "headers": {
+          "Authorization": "Bearer {apiKey}",
+          "Ocp-Apim-Subscription-Key": { "envVarName": "ACME_SUBSCRIPTION_KEY" }
+        },
+        "query": { "api-version": "2026-01-01" },
+        "backends": {
+          "anthropic": {
+            "pathTemplate": "anthropic/{slug}",
+            "headers": { "x-route": "anthropic" }
+          }
+        }
+      },
+      "models": [{ "id": "claude-opus-4-8", "backend": "anthropic" }]
+    }
+  ]
+}
+```
+
+Backend-level `headers` / `query` merge over the gateway-level ones (backend wins per name).
+The `Authorization` line covers gateways that authenticate every backend with a bearer token — including the `anthropic` backend, whose SDK would otherwise only send the key as `x-api-key`.
 
 ### Provider-native features (tools, embeddings)
 

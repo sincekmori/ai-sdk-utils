@@ -19,6 +19,9 @@ interface RawProvider {
 	id: string;
 	vendor?: string;
 	baseURL?: string;
+	apiKey?: string;
+	headers?: Record<string, unknown>;
+	query?: Record<string, string>;
 	gateway?: Record<string, unknown>;
 	models: RawModel[];
 }
@@ -144,6 +147,42 @@ describe("config schema", () => {
 			roles: { r: { provider: "compat", model: "m" } },
 		};
 		expect(errorOf(bad)).toContain("baseURL");
+	});
+
+	// --- Headers / query ------------------------------------------------------
+
+	it("accepts headers and query on a direct provider, a gateway, and a backend", () => {
+		const ok = clone(valid);
+		ok.providers[0].apiKey = "sk-123";
+		ok.providers[0].headers = {
+			"x-team-id": "platform",
+			"api-key": "{apiKey}",
+			"Ocp-Apim-Subscription-Key": { envVarName: "APIM_KEY" },
+		};
+		ok.providers[0].query = { "api-version": "2026-01-01" };
+		const gateway = ok.providers[1].gateway as {
+			headers?: unknown;
+			query?: unknown;
+			backends: Record<string, Record<string, unknown>>;
+		};
+		gateway.headers = { Authorization: "Bearer {apiKey}" };
+		gateway.query = { "api-version": "2026-01-01" };
+		gateway.backends.anthropic.headers = { "x-route": "anthropic" };
+		expect(errorOf(ok)).toBe("");
+	});
+
+	it("rejects headers/query alongside a gateway block (they go inside it)", () => {
+		const bad = clone(valid);
+		bad.providers[1].headers = { "x-team-id": "platform" };
+		bad.providers[1].query = { "api-version": "2026-01-01" };
+		expect(errorOf(bad)).toContain("headers");
+		expect(errorOf(bad)).toContain("query");
+	});
+
+	it("rejects {apiKey} in a direct provider's headers without a key to substitute", () => {
+		const bad = clone(valid);
+		bad.providers[0].headers = { Authorization: "Bearer {apiKey}" };
+		expect(errorOf(bad)).toContain("{apiKey}");
 	});
 
 	it("rejects a gateway pathTemplate missing the {slug} placeholder", () => {

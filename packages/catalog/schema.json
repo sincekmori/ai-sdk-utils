@@ -45,6 +45,42 @@
             "type": "string",
             "minLength": 1
           },
+          "headers": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "minLength": 1
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "envVarName": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["envVarName"],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "query": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "minLength": 1
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
           "gateway": {
             "type": "object",
             "properties": {
@@ -59,6 +95,42 @@
                 "type": "string",
                 "minLength": 1
               },
+              "headers": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "envVarName": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["envVarName"],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "query": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
               "backends": {
                 "type": "object",
                 "properties": {
@@ -68,6 +140,42 @@
                       "pathTemplate": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "headers": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "envVarName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["envVarName"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "query": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
                       }
                     },
                     "required": ["pathTemplate"],
@@ -79,6 +187,42 @@
                       "pathTemplate": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "headers": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "envVarName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["envVarName"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "query": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
                       }
                     },
                     "required": ["pathTemplate"],
@@ -90,6 +234,42 @@
                       "pathTemplate": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "headers": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "envVarName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["envVarName"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "query": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
                       },
                       "name": {
                         "type": "string",
@@ -105,6 +285,42 @@
                       "pathTemplate": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "headers": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "envVarName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["envVarName"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "query": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
                       }
                     },
                     "required": ["pathTemplate"],
@@ -116,6 +332,42 @@
                       "pathTemplate": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "headers": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "envVarName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["envVarName"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "query": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
                       }
                     },
                     "required": ["pathTemplate"],
@@ -127,6 +379,42 @@
                       "pathTemplate": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "headers": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "envVarName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["envVarName"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "query": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
                       }
                     },
                     "required": ["pathTemplate"],
@@ -138,6 +426,42 @@
                       "pathTemplate": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "headers": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "envVarName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["envVarName"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "query": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
                       }
                     },
                     "required": ["pathTemplate"],
@@ -149,6 +473,42 @@
                       "pathTemplate": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "headers": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "envVarName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["envVarName"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "query": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
                       }
                     },
                     "required": ["pathTemplate"],
@@ -160,6 +520,42 @@
                       "pathTemplate": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "headers": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "envVarName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["envVarName"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "query": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
                       }
                     },
                     "required": ["pathTemplate"],
@@ -176,6 +572,42 @@
                         "type": "object",
                         "propertyNames": {
                           "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "headers": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "envVarName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["envVarName"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "query": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "minLength": 1
                         },
                         "additionalProperties": {
                           "type": "string"

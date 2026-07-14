@@ -66,6 +66,12 @@ backends, `actionMap` and `slug` overrides, and per-model `providerOptions` merg
   serves it. `{slug}` in a `pathTemplate` is replaced with the model's `slug` (falling back to its
   `id`); for the `google` backend the model lives in the URL, so the whole path is rewritten,
   including the streaming/non-streaming action via `actionMap`.
+- The gateway also sets `headers` and `query`: extra headers sent with every request — `{apiKey}`
+  in an inline value embeds the gateway key (e.g. `"Bearer {apiKey}"`), and `envVarName` reads a
+  value such as an APIM subscription key from the environment — plus a mandatory `api-version`
+  query parameter, appended after the path rewriting. Each backend can add its own `headers` /
+  `query`, merged over the gateway-level ones (backend wins per name). Both also work on direct
+  providers.
 - Per-model `settings` merge over the provider's: `gpt-5.6-luna` keeps the inherited
   `maxOutputTokens` and `reasoningEffort` while overriding `temperature` and adding
   `parallelToolCalls`.

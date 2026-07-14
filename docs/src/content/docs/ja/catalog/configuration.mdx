@@ -68,6 +68,12 @@ export const withUserSchemaPath = (raw) =>
   指名します。`pathTemplate` 内の `{slug}` はモデルの `slug`(無ければ `id`)に置換されます。
   `google` バックエンドはモデルが URL 側に載るためパス全体が書き換えられ、ストリーミング/
   非ストリーミングのアクション切り替えも `actionMap` で扱えます。
+- このゲートウェイは `headers` と `query` も設定しています: すべてのリクエストに付与される
+  追加ヘッダー — インライン値の `{apiKey}` はゲートウェイのキーに置換され
+  (例: `"Bearer {apiKey}"`)、`envVarName` は APIM のサブスクリプションキーのような値を
+  環境変数から読み取ります — と、パス書き換え後に付与される必須の `api-version` クエリ
+  パラメータです。各バックエンドも自分の `headers` / `query` を持て、ゲートウェイレベルの
+  ものにマージされます(同名はバックエンド側が優先)。どちらも direct プロバイダでも使えます。
 - モデル単位の `settings` はプロバイダの設定にマージされます: `gpt-5.6-luna` は継承した
   `maxOutputTokens` と `reasoningEffort` を保ったまま、`temperature` を上書きし
   `parallelToolCalls` を追加しています。

@@ -5,7 +5,13 @@ import { type FetchFunction, loadApiKey, withoutTrailingSlash } from "@ai-sdk/pr
 import type { LanguageModel } from "ai";
 
 import type { GatewayOptions } from "./backends.ts";
-import { createBodyModelFetch, createGeminiFetch, MODEL_SLUG_PLACEHOLDER } from "./fetch.ts";
+import {
+	createBodyModelFetch,
+	createGeminiFetch,
+	createQueryFetch,
+	MODEL_SLUG_PLACEHOLDER,
+} from "./fetch.ts";
+import { mergeAndResolveHeaders, type QueryParams, type RequestHeaders } from "./headers.ts";
 import type { Model, ProviderResolver, Vendor } from "./schema.ts";
 import { callSurface, createVendor, type VendorProvider } from "./vendors.ts";
 
@@ -66,7 +72,6 @@ export function createGatewayRuntime(
 		slugOf.set(m.id, m.slug ?? m.id);
 	}
 	const slugFor = (model: string): string => slugOf.get(model) ?? model;
-	const bodyModelFetch = createBodyModelFetch(slugFor, baseFetch);
 
 	const fixedPathBaseURL = (pathTemplate: string): string =>
 		`${baseURL}/${pathTemplate.replace(/^\/+/u, "").replaceAll("{slug}", MODEL_SLUG_PLACEHOLDER)}`;
@@ -83,17 +88,30 @@ export function createGatewayRuntime(
 				`Model routed to backend "${backend}", but "${providerId}.gateway.backends.${backend}" is not configured.`,
 			);
 		}
+		const apiKey = getApiKey();
+		// Gateway-level headers/query apply to every backend; the backend's own
+		// entries are merged on top (backend wins per name). Query params are
+		// appended after the path rewriting, so they land on the final gateway URL.
+		const headers = mergeAndResolveHeaders(gateway.headers, cfg.headers, {
+			apiKey,
+			description: `gateway provider "${providerId}"`,
+		});
+		const query: QueryParams = { ...gateway.query, ...cfg.query };
+		const backendFetch =
+			Object.keys(query).length > 0 ? createQueryFetch(query, baseFetch) : baseFetch;
 		const created =
 			backend === "google"
 				? createVendor("google", {
 						baseURL,
-						apiKey: getApiKey(),
-						fetch: createGeminiFetch(baseURL, cfg, { slugFor, baseFetch }),
+						apiKey,
+						headers,
+						fetch: createGeminiFetch(baseURL, cfg, { slugFor, baseFetch: backendFetch }),
 					})
 				: createVendor(backend, {
 						baseURL: fixedPathBaseURL(cfg.pathTemplate),
-						apiKey: getApiKey(),
-						fetch: bodyModelFetch,
+						apiKey,
+						headers,
+						fetch: createBodyModelFetch(slugFor, backendFetch),
 						name: "name" in cfg ? cfg.name : undefined,
 					});
 		cache.set(backend, created);
@@ -126,7 +144,14 @@ export function createGatewayRuntime(
  */
 export function createDirectRuntime(
 	vendor: Vendor,
-	options: { baseURL?: string; apiKey?: string; apiKeyEnvVarName?: string; name?: string },
+	options: {
+		baseURL?: string;
+		apiKey?: string;
+		apiKeyEnvVarName?: string;
+		name?: string;
+		headers?: RequestHeaders;
+		query?: QueryParams;
+	},
 	baseFetch?: FetchFunction,
 ): ProviderRuntime {
 	let provider: VendorProvider | undefined = undefined;
@@ -140,10 +165,20 @@ export function createDirectRuntime(
 							description: `provider vendor "${vendor}"`,
 						})
 					: undefined;
+			// Headers resolve here — lazily, like the key — so an env-var-backed
+			// header is only required once a model of this provider is used.
+			const headers = mergeAndResolveHeaders(options.headers, undefined, {
+				apiKey,
+				description: `provider vendor "${vendor}"`,
+			});
 			provider = createVendor(vendor, {
 				apiKey,
 				baseURL: options.baseURL,
-				fetch: baseFetch,
+				fetch:
+					options.query !== undefined && Object.keys(options.query).length > 0
+						? createQueryFetch(options.query, baseFetch)
+						: baseFetch,
+				headers,
 				name: options.name,
 			});
 		}
