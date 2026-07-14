@@ -4,12 +4,11 @@ A monorepo of small companion libraries for the [Vercel AI SDK](https://ai-sdk.d
 
 ## Packages
 
-| Package                                                | Description                                                                                               |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| [`ai-sdk-local-fetch`](packages/local-fetch)           | Use AI SDK `streamText` directly on the client — no server required.                                      |
-| [`ai-sdk-ping`](packages/ping)                         | Ping an AI SDK `LanguageModel` to verify it is reachable and configured.                                  |
-| [`ai-sdk-catalog`](packages/catalog)                   | Manage providers, models, and roles from one declarative config — direct vendors or your own LLM gateway. |
-| [`ai-sdk-gateway-provider`](packages/gateway-provider) | Turn your own LLM gateway into an AI SDK provider from a declarative config.                              |
+| Package                                      | Description                                                                                               |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [`ai-sdk-local-fetch`](packages/local-fetch) | Use AI SDK `streamText` directly on the client — no server required.                                      |
+| [`ai-sdk-ping`](packages/ping)               | Ping an AI SDK `LanguageModel` to verify it is reachable and configured.                                  |
+| [`ai-sdk-catalog`](packages/catalog)         | Manage providers, models, and roles from one declarative config — direct vendors or your own LLM gateway. |
 
 ## Development
 

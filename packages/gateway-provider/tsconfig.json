@@ -1,8 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    // config.ts uses Node built-ins (node:fs/promises), so load Node types.
-    "types": ["node"]
-  },
-  "include": ["src", "test", "examples"]
-}
