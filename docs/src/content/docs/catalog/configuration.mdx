@@ -15,12 +15,12 @@ One JSON file declares your `providers` (each with the `models` it serves) and t
 references. A provider resolves in one of three ways, and they all coexist in the same config:
 
 - **direct** — a bundled `@ai-sdk/*` vendor used straight. `{ "id": "openai" }` calls
-  `@ai-sdk/openai` directly with `OPENAI_API_KEY`. Override the endpoint with `baseURL` / `apiKey`
-  — that covers OpenAI-compatible servers like Ollama too, still config-only.
+  `@ai-sdk/openai` directly with `OPENAI_API_KEY`. The `vendor` block overrides the endpoint with
+  `baseURL` / `apiKey` — that covers OpenAI-compatible servers like Ollama too, still config-only.
 - **gateway** — add a `gateway` block describing your own LLM gateway's topology and tag each model
   with its `backend`; requests route there instead. No extra code.
 - **resolver** — a provider whose auth doesn't fit a bundled vendor or a bearer-token gateway
-  (Amazon Bedrock, Google Vertex, Azure) is wired in code via `createCatalog(config, { resolvers })`.
+  (Amazon Bedrock, Google Vertex, Azure) is wired in code via `createCatalog(config, { providers })`.
 
 The examples below are the ones shipped in the repository under
 [`packages/catalog/examples/`](https://github.com/sincekmori/ai-sdk-utils/tree/main/packages/catalog/examples)
@@ -48,9 +48,9 @@ Several direct vendors, inherited default call settings, and a local OpenAI-comp
 - The `openai` provider's `settings` block sets default call settings inherited by every one of its
   models; `gpt-5.6-luna` overrides `temperature` for itself only. Settings are baked into the model
   handle, and remain overridable per call.
-- The `ollama` provider shows the endpoint override: `vendor: "openai"` plus a `baseURL` reaches any
-  OpenAI-compatible server. Its model sets `api: "chat"` because the server speaks Chat Completions
-  rather than the Responses API.
+- The `ollama` provider shows the endpoint override: a `vendor` block with `id: "openai"` and a
+  `baseURL` reaches any OpenAI-compatible server. Its model sets `api: "chat"` because the server
+  speaks Chat Completions rather than the Responses API.
 
 ## Advanced
 
@@ -59,19 +59,24 @@ backends, `actionMap` and `slug` overrides, and per-model `providerOptions` merg
 
 <Code code={withUserSchemaPath(advanced)} lang="json" title="ai-sdk-catalog.advanced.json" />
 
-- `fireworks` uses the `openai-compatible` vendor, which has no canonical endpoint — so `baseURL`
-  is required, and `name` sets the metadata namespace.
-- `acme` is a **gateway provider**: the `gateway` block describes the gateway's topology
-  (`apiKeyEnvVarName` defaults to `AI_GATEWAY_API_KEY`), and each model names the `backend` that
-  serves it. `{slug}` in a `pathTemplate` is replaced with the model's `slug` (falling back to its
-  `id`); for the `google` backend the model lives in the URL, so the whole path is rewritten,
-  including the streaming/non-streaming action via `actionMap`.
+- `fireworks` uses the `openai-compatible` vendor, which has no canonical endpoint — so its
+  `vendor` block sets a `baseURL`, plus the key (`apiKey` is a literal string or
+  `{ "envVarName": "..." }`) and `name` for the metadata namespace.
+- `acme` is a **gateway provider**: the `gateway` block describes the gateway's topology (omit
+  `apiKey` to read `AI_GATEWAY_API_KEY`). `backends` is a map under keys of your choice, each
+  naming the `vendor` it speaks — so the same vendor can appear twice (here `claude-eu` and
+  `claude-us`) — and each model names its backend by key. `{slug}` in a `pathTemplate` is replaced
+  with the model's `slug` (falling back to its `id`); for a `google` backend the model lives in
+  the URL, so the whole path is rewritten, including the streaming/non-streaming action via
+  `actionMap`.
 - The gateway also sets `headers` and `query`: extra headers sent with every request — `{apiKey}`
   in an inline value embeds the gateway key (e.g. `"Bearer {apiKey}"`), and `envVarName` reads a
   value such as an APIM subscription key from the environment — plus a mandatory `api-version`
   query parameter, appended after the path rewriting. Each backend can add its own `headers` /
-  `query`, merged over the gateway-level ones (backend wins per name). Both also work on direct
-  providers.
+  `query`, merged over the gateway-level ones (backend wins per name). Both also work on a direct
+  provider's `vendor` block.
+- `roles` here use the string shorthand `"provider:model"`, split at the first `:`; the object
+  form `{ "provider": ..., "model": ... }` (see the other examples) is equivalent.
 - Per-model `settings` merge over the provider's: `gpt-5.6-luna` keeps the inherited
   `maxOutputTokens` and `reasoningEffort` while overriding `temperature` and adding
   `parallelToolCalls`.
@@ -80,8 +85,9 @@ backends, `actionMap` and `slug` overrides, and per-model `providerOptions` merg
 
 `createCatalog` validates the config up front: provider and model id uniqueness, that every role
 references a real provider + model pair, and — for gateway providers — that each model names a
-`backend` the `gateway` block actually configures. Invalid input throws a readable error listing
-every issue with its path.
+`backend` key the `gateway` block actually configures. Every object is strict, so an unknown or
+misspelled field fails validation instead of being silently dropped. Invalid input throws a
+readable error listing every issue with its path.
 
 The `$schema` key is optional and ignored at runtime; pointing it at
 `./node_modules/ai-sdk-catalog/schema.json` (or a versioned CDN URL) gives you editor validation

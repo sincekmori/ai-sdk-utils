@@ -1,7 +1,7 @@
 // Copyright 2026 Shinsuke Mori
 // SPDX-License-Identifier: Apache-2.0
 
-import { type FetchFunction, loadApiKey, withoutTrailingSlash } from "@ai-sdk/provider-utils";
+import { type FetchFunction, withoutTrailingSlash } from "@ai-sdk/provider-utils";
 import type { LanguageModel } from "ai";
 
 import type { GatewayOptions } from "./backends.ts";
@@ -11,8 +11,15 @@ import {
 	createQueryFetch,
 	MODEL_SLUG_PLACEHOLDER,
 } from "./fetch.ts";
-import { mergeAndResolveHeaders, type QueryParams, type RequestHeaders } from "./headers.ts";
-import type { Model, ProviderResolver, Vendor } from "./schema.ts";
+import {
+	type ApiKey,
+	mergeAndResolveHeaders,
+	type QueryParams,
+	type RequestHeaders,
+	resolveApiKey,
+} from "./headers.ts";
+import type { Model, ModelApi } from "./schema.ts";
+import type { Vendor } from "./vendor-ids.ts";
 import { callSurface, createVendor, type VendorProvider } from "./vendors.ts";
 
 /**
@@ -22,7 +29,7 @@ import { callSurface, createVendor, type VendorProvider } from "./vendors.ts";
  * unknown model id; resolver-backed providers expose no instance at all.
  */
 export interface ProviderRuntime {
-	resolve: ProviderResolver;
+	resolve(modelId: string, api?: ModelApi): LanguageModel;
 	/** Omitted by resolver-backed providers, which expose no instance. */
 	instance?(modelId: string): VendorProvider | undefined;
 }
@@ -40,14 +47,15 @@ export interface GatewayRuntimeOptions {
 
 /**
  * Builds the runtime for a gateway provider: every model routes through one
- * gateway endpoint to the right upstream backend. Sub-providers are built lazily
- * and memoized, so the gateway key is only read when a model is first used and
- * only the referenced backends are ever constructed.
+ * gateway endpoint to the upstream backend named by its `backend` key.
+ * Sub-providers are built lazily and memoized, so the gateway key is only read
+ * when a model is first used and only the referenced backends are ever
+ * constructed.
  *
- * For fixed-path backends the model is carried in the request body and the URL
- * slug is substituted per request; for `google` the model is in the URL, which
- * is rewritten to the gateway layout (including the streaming/non-streaming
- * action switch).
+ * For every vendor except `google` the model is carried in the request body and
+ * the URL slug is substituted per request; for `google` the model is in the
+ * URL, which is rewritten to the gateway layout (including the streaming/
+ * non-streaming action switch).
  */
 export function createGatewayRuntime(
 	providerId: string,
@@ -57,13 +65,12 @@ export function createGatewayRuntime(
 	const { models, baseFetch } = options;
 	const baseURL = withoutTrailingSlash(gateway.baseURL) ?? gateway.baseURL;
 	const getApiKey = (): string =>
-		loadApiKey({
-			apiKey: gateway.apiKey,
-			environmentVariableName: gateway.apiKeyEnvVarName ?? "AI_GATEWAY_API_KEY",
+		resolveApiKey(gateway.apiKey, {
+			defaultEnvVarName: "AI_GATEWAY_API_KEY",
 			description: `gateway provider "${providerId}"`,
 		});
 
-	const backendOf = new Map<string, Vendor>();
+	const backendOf = new Map<string, string>();
 	const slugOf = new Map<string, string>();
 	for (const m of models) {
 		if (m.backend !== undefined) {
@@ -76,16 +83,16 @@ export function createGatewayRuntime(
 	const fixedPathBaseURL = (pathTemplate: string): string =>
 		`${baseURL}/${pathTemplate.replace(/^\/+/u, "").replaceAll("{slug}", MODEL_SLUG_PLACEHOLDER)}`;
 
-	const cache = new Map<Vendor, VendorProvider>();
-	const instanceFor = (backend: Vendor): VendorProvider => {
-		const cached = cache.get(backend);
+	const cache = new Map<string, VendorProvider>();
+	const instanceFor = (backendKey: string): VendorProvider => {
+		const cached = cache.get(backendKey);
 		if (cached !== undefined) {
 			return cached;
 		}
-		const cfg = gateway.backends[backend];
-		if (!cfg) {
+		const cfg = gateway.backends[backendKey];
+		if (cfg === undefined) {
 			throw new Error(
-				`Model routed to backend "${backend}", but "${providerId}.gateway.backends.${backend}" is not configured.`,
+				`Model routed to backend "${backendKey}", but "${providerId}.gateway.backends.${backendKey}" is not configured.`,
 			);
 		}
 		const apiKey = getApiKey();
@@ -100,21 +107,21 @@ export function createGatewayRuntime(
 		const backendFetch =
 			Object.keys(query).length > 0 ? createQueryFetch(query, baseFetch) : baseFetch;
 		const created =
-			backend === "google"
+			cfg.vendor === "google"
 				? createVendor("google", {
 						baseURL,
 						apiKey,
 						headers,
 						fetch: createGeminiFetch(baseURL, cfg, { slugFor, baseFetch: backendFetch }),
 					})
-				: createVendor(backend, {
+				: createVendor(cfg.vendor, {
 						baseURL: fixedPathBaseURL(cfg.pathTemplate),
 						apiKey,
 						headers,
 						fetch: createBodyModelFetch(slugFor, backendFetch),
-						name: "name" in cfg ? cfg.name : undefined,
+						name: cfg.name,
 					});
-		cache.set(backend, created);
+		cache.set(backendKey, created);
 		return created;
 	};
 
@@ -135,10 +142,10 @@ export function createGatewayRuntime(
 
 /**
  * Builds the runtime for a direct provider: the bundled `@ai-sdk/*` vendor used
- * straight, at its own endpoint (or a `baseURL` override). The vendor instance
- * is built lazily and memoized; the API key is taken from `apiKey` /
- * `apiKeyEnvVarName` when given, otherwise the vendor SDK's own default
- * (e.g. `OPENAI_API_KEY`).
+ * straight, at its own endpoint or the vendor block's overrides. The vendor
+ * instance is built lazily and memoized; the API key comes from the block's
+ * `apiKey` (literal or env var) when given, otherwise the vendor SDK's own
+ * default applies (e.g. `OPENAI_API_KEY`).
  *
  * `baseFetch` (when given) is handed to the vendor SDK as its `fetch`.
  */
@@ -146,8 +153,7 @@ export function createDirectRuntime(
 	vendor: Vendor,
 	options: {
 		baseURL?: string;
-		apiKey?: string;
-		apiKeyEnvVarName?: string;
+		apiKey?: ApiKey;
 		name?: string;
 		headers?: RequestHeaders;
 		query?: QueryParams;
@@ -157,20 +163,11 @@ export function createDirectRuntime(
 	let provider: VendorProvider | undefined = undefined;
 	const get = (): VendorProvider => {
 		if (provider === undefined) {
-			const apiKey =
-				options.apiKey !== undefined || options.apiKeyEnvVarName !== undefined
-					? loadApiKey({
-							apiKey: options.apiKey,
-							environmentVariableName: options.apiKeyEnvVarName ?? "",
-							description: `provider vendor "${vendor}"`,
-						})
-					: undefined;
+			const description = `provider vendor "${vendor}"`;
+			const apiKey = resolveApiKey(options.apiKey, { description });
 			// Headers resolve here — lazily, like the key — so an env-var-backed
 			// header is only required once a model of this provider is used.
-			const headers = mergeAndResolveHeaders(options.headers, undefined, {
-				apiKey,
-				description: `provider vendor "${vendor}"`,
-			});
+			const headers = mergeAndResolveHeaders(options.headers, undefined, { apiKey, description });
 			provider = createVendor(vendor, {
 				apiKey,
 				baseURL: options.baseURL,

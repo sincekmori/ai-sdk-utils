@@ -1,12 +1,12 @@
 // Copyright 2026 Shinsuke Mori
 // SPDX-License-Identifier: Apache-2.0
 
-import type { LanguageModel } from "ai";
 import * as z from "zod";
 
 import { GatewayOptions } from "./backends.ts";
-import { QueryParams, RequestHeaders } from "./headers.ts";
+import { ApiKey, QueryParams, RequestHeaders } from "./headers.ts";
 import { configInvariants } from "./invariants.ts";
+import { Vendor } from "./vendor-ids.ts";
 
 /**
  * Single source of truth for LLM providers, their models, and the role
@@ -16,16 +16,17 @@ import { configInvariants } from "./invariants.ts";
  * the `roles` your app references. A provider resolves in one of three ways:
  *
  *   - **direct** — a bundled `@ai-sdk/*` vendor used straight (e.g. `openai`).
- *     The default: `{ id: openai }` calls `@ai-sdk/openai` directly. Override
- *     the endpoint with `baseURL` / `apiKey` if needed.
+ *     The default: `{ id: openai }` calls `@ai-sdk/openai` directly. The
+ *     `vendor` block overrides the endpoint, key, headers, and query if needed.
  *   - **gateway** — add a `gateway` block describing your own LLM gateway's
  *     topology and tag each model with its `backend`; it routes there instead.
  *   - **resolver** — a provider whose auth doesn't fit a bundled vendor or a
  *     bearer-token gateway (Amazon Bedrock, Google Vertex, Azure) is wired in
- *     code via `createCatalog(config, { resolvers })`.
+ *     code via `createCatalog(config, { providers })`.
  *
- * Validated from a plain object at startup (parsed from JSON or built in
- * code), so it works the same in Node and in the browser. Zod v4.
+ * Every object is strict: an unknown key fails validation instead of being
+ * silently dropped. Validated from a plain object at startup (parsed from JSON
+ * or built in code), so it works the same in Node and in the browser. Zod v4.
  */
 
 /** A plain JSON object, mirroring the AI SDK's `JSONObject` type. */
@@ -47,43 +48,12 @@ export const ModelApi = z.enum(["responses", "chat", "completion"]);
 export type ModelApi = z.infer<typeof ModelApi>;
 
 /**
- * Resolves a provider's model id to a runtime handle. Supply one per provider
- * via `createCatalog(config, { resolvers })` for a provider that is neither a
- * built-in vendor nor a `gateway` block — for example Amazon Bedrock, Google
- * Vertex, or Azure, whose auth doesn't fit a bearer token. `api` is the model's
- * {@link ModelApi} (undefined when the config omits it), so the resolver can
- * pick the call surface.
- */
-export type ProviderResolver = (modelId: string, api?: ModelApi) => LanguageModel;
-
-/**
- * A bundled `@ai-sdk/*` provider. Used as a **direct** provider's vendor and as
- * a gateway **backend**. The OpenAI-compatible family (Fireworks, Together,
- * Cerebras, DeepInfra, Ollama, ...) is covered by `openai-compatible`.
- * Bedrock / Vertex / Azure are intentionally omitted: their bespoke cloud auth
- * doesn't fit here — wire them through a custom resolver instead.
- */
-export const Vendor = z.enum([
-	"anthropic",
-	"openai",
-	"openai-compatible",
-	"mistral",
-	"cohere",
-	"groq",
-	"xai",
-	"deepseek",
-	"perplexity",
-	"google",
-]);
-export type Vendor = z.infer<typeof Vendor>;
-
-/**
  * Default AI SDK call settings, baked into the model handle in
  * {@link createCatalog} via `defaultSettingsMiddleware`. They map 1:1 to the
  * parameters `generateText`/`streamText` accept, so anything set here can also
  * be overridden per call. Every field is optional.
  */
-export const ModelSettings = z.object({
+export const ModelSettings = z.strictObject({
 	maxOutputTokens: z.number().int().positive().optional(),
 	temperature: z.number().optional(),
 	topP: z.number().optional(),
@@ -102,48 +72,55 @@ export type ModelSettings = z.infer<typeof ModelSettings>;
  * One model a provider serves.
  *   - `api` picks the call surface (see {@link ModelApi}); omit for the vendor
  *     default. Applies to any provider kind.
- *   - `backend`/`slug` apply to gateway providers (which upstream serves it, and
- *     the path segment when it differs from `id`).
+ *   - `backend`/`slug` apply to gateway providers (the `gateway.backends` key
+ *     that serves it, and the path segment when it differs from `id`).
  *   - `settings` are default call settings, merged over the provider's own.
  * The schema keeps every field optional; {@link Config}'s refinement enforces
  * that the right ones are present for the provider's kind.
  */
-export const Model = z.object({
+export const Model = z.strictObject({
 	id: z.string().min(1), // must match the vendor's model id (e.g. "gpt-5.6")
 	api: ModelApi.optional(), // call surface; omit for the vendor default
-	backend: Vendor.optional(), // gateway providers only
+	backend: z.string().min(1).optional(), // gateway providers only (backends key)
 	slug: z.string().min(1).optional(), // gateway providers only (path override)
 	settings: ModelSettings.optional(),
 });
 export type Model = z.infer<typeof Model>;
 
 /**
- * A provider and the models it serves.
- *   - Add a `gateway` block to route it through your own gateway (its models
- *     then require a `backend`).
- *   - Otherwise it is a **direct** provider: its vendor is `vendor ?? id` and it
- *     calls the bundled `@ai-sdk/*` package straight. `baseURL` / `apiKey` /
- *     `apiKeyEnvVarName` override the vendor's endpoint and key; `name` sets the
- *     metadata namespace for `openai-compatible`.
- *   - A provider whose vendor is not built in is resolved by a custom resolver
- *     passed to `createCatalog` (e.g. Amazon Bedrock, with its bespoke auth).
+ * A direct provider's vendor: which bundled `@ai-sdk/*` package backs it, and
+ * transport overrides for its endpoint. Everything is optional — `id` defaults
+ * to the provider's own id, and with no overrides the vendor SDK's defaults
+ * apply (its endpoint, its key env var). The string shorthand `"vendor": "x"`
+ * means `{ "id": "x" }`.
  */
-export const Provider = z.object({
-	id: z.string().min(1), // becomes the registry prefix => "openai:gpt-5.6"
-	// Direct-vendor fields (ignored when `gateway` is set):
-	vendor: Vendor.optional(), // defaults to `id`
-	baseURL: z.string().min(1).optional(),
-	apiKey: z.string().optional(),
-	apiKeyEnvVarName: z.string().min(1).optional(),
-	name: z.string().min(1).optional(), // openai-compatible metadata name
+export const VendorBlock = z.strictObject({
+	id: Vendor.optional(), // defaults to the provider id
+	baseURL: z.string().min(1).optional(), // custom endpoint (proxy, Ollama, ...)
+	apiKey: ApiKey.optional(), // literal or { envVarName }; omit for the SDK default
+	name: z.string().min(1).optional(), // openai-compatible metadata namespace
 	// Extra headers sent with every request (merged over the vendor SDK's own,
-	// same-name wins). An inline value may embed the key via "{apiKey}";
-	// `{ "envVarName": "..." }` reads the value from that environment variable.
+	// same-name wins). An inline value may embed the key via "{apiKey}".
 	headers: RequestHeaders.optional(),
 	// Query params appended to every request URL, e.g. { "api-version": "..." }.
 	query: QueryParams.optional(),
-	// Gateway field:
-	gateway: GatewayOptions.optional(),
+});
+export type VendorBlock = z.infer<typeof VendorBlock>;
+
+/**
+ * A provider and the models it serves. Exactly one kind:
+ *   - **direct** — no `gateway` block. Its vendor is `vendor` (string shorthand
+ *     or a {@link VendorBlock}), defaulting to `id`, and it calls the bundled
+ *     `@ai-sdk/*` package straight.
+ *   - **gateway** — a `gateway` block routes it through your own gateway (its
+ *     models then require a `backend`). `vendor` must not be set.
+ *   - **resolver** — a provider whose vendor is not built in is resolved by a
+ *     `resolve` override passed to `createCatalog` (e.g. Amazon Bedrock).
+ */
+export const Provider = z.strictObject({
+	id: z.string().min(1), // becomes the registry prefix => "openai:gpt-5.6"
+	vendor: z.union([Vendor, VendorBlock]).optional(), // direct providers only
+	gateway: GatewayOptions.optional(), // gateway providers only
 	// Default call settings inherited by every model in this provider. Each
 	// model's own `settings` are merged on top (model wins). Optional.
 	settings: ModelSettings.optional(),
@@ -151,11 +128,22 @@ export const Provider = z.object({
 });
 export type Provider = z.infer<typeof Provider>;
 
-/** A role points at exactly one provider+model pair. */
-export const RoleRef = z.object({
+/** A role's target, spelled out as an object. */
+export const RoleTarget = z.strictObject({
 	provider: z.string().min(1),
 	model: z.string().min(1),
 });
+export type RoleTarget = z.infer<typeof RoleTarget>;
+
+/**
+ * A role points at exactly one provider+model pair: either the shorthand string
+ * `"provider:model"` (split at the first `:`, so model ids may contain colons),
+ * or a {@link RoleTarget} object. Both forms are equivalent.
+ */
+export const RoleRef = z.union([
+	z.string().regex(/^[^:]+:./u, 'expected "provider:model"'),
+	RoleTarget,
+]);
 export type RoleRef = z.infer<typeof RoleRef>;
 
 /**
@@ -165,9 +153,11 @@ export type RoleRef = z.infer<typeof RoleRef>;
  * wired in as the refinement here.
  */
 export const Config = z
-	.object({
+	.strictObject({
+		// Optional editor pointer to the JSON Schema; ignored at runtime.
+		$schema: z.string().optional(),
 		providers: z.array(Provider).min(1),
-		roles: z.record(z.string(), RoleRef), // role name -> { provider, model }
+		roles: z.record(z.string(), RoleRef), // role name -> target
 	})
 	.superRefine(configInvariants);
 
@@ -175,3 +165,7 @@ export type Config = z.infer<typeof Config>;
 
 /** Stable address used everywhere: `${providerId}:${modelId}`. */
 export type ModelKey = `${string}:${string}`;
+
+// Re-exported from its own module (it is shared with the gateway backends) so
+// consumers keep importing everything schema-shaped from one place.
+export { Vendor } from "./vendor-ids.ts";

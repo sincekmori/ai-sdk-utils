@@ -45,6 +45,7 @@ describe("config headers and query on the wire", () => {
 						query: { "api-version": "2026-01-01" },
 						backends: {
 							anthropic: {
+								vendor: "anthropic",
 								pathTemplate: "anthropic/{slug}",
 								headers: { "x-team-id": "ml" }, // backend wins over the gateway value
 							},
@@ -78,10 +79,12 @@ describe("config headers and query on the wire", () => {
 			providers: [
 				{
 					id: "anthropic",
-					baseURL: "https://proxy.example.com/anthropic",
-					apiKey: "sk-123",
-					headers: { "Ocp-Apim-Subscription-Key": "{apiKey}" },
-					query: { "api-version": "2026-01-01" },
+					vendor: {
+						baseURL: "https://proxy.example.com/anthropic",
+						apiKey: "sk-123",
+						headers: { "Ocp-Apim-Subscription-Key": "{apiKey}" },
+						query: { "api-version": "2026-01-01" },
+					},
 					models: [{ id: "claude-sonnet-5" }],
 				},
 			],
@@ -104,9 +107,11 @@ describe("config headers and query on the wire", () => {
 			providers: [
 				{
 					id: "anthropic",
-					baseURL: "https://proxy.example.com/anthropic",
-					apiKey: "placeholder", // would land in x-api-key, but the header below wins
-					headers: { "x-api-key": "real-key" },
+					vendor: {
+						baseURL: "https://proxy.example.com/anthropic",
+						apiKey: "placeholder", // would land in x-api-key, but the header below wins
+						headers: { "x-api-key": "real-key" },
+					},
 					models: [{ id: "claude-sonnet-5" }],
 				},
 			],

@@ -16,70 +16,107 @@
             "minLength": 1
           },
           "vendor": {
-            "type": "string",
-            "enum": [
-              "anthropic",
-              "openai",
-              "openai-compatible",
-              "mistral",
-              "cohere",
-              "groq",
-              "xai",
-              "deepseek",
-              "perplexity",
-              "google"
-            ]
-          },
-          "baseURL": {
-            "type": "string",
-            "minLength": 1
-          },
-          "apiKey": {
-            "type": "string"
-          },
-          "apiKeyEnvVarName": {
-            "type": "string",
-            "minLength": 1
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "headers": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "minLength": 1
-            },
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "minLength": 1
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "envVarName": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "anthropic",
+                  "openai",
+                  "openai-compatible",
+                  "mistral",
+                  "cohere",
+                  "groq",
+                  "xai",
+                  "deepseek",
+                  "perplexity",
+                  "google"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "enum": [
+                      "anthropic",
+                      "openai",
+                      "openai-compatible",
+                      "mistral",
+                      "cohere",
+                      "groq",
+                      "xai",
+                      "deepseek",
+                      "perplexity",
+                      "google"
+                    ]
+                  },
+                  "baseURL": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "apiKey": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "envVarName": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["envVarName"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "headers": {
+                    "type": "object",
+                    "propertyNames": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "envVarName": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["envVarName"],
+                          "additionalProperties": false
+                        }
+                      ]
                     }
                   },
-                  "required": ["envVarName"],
-                  "additionalProperties": false
-                }
-              ]
-            }
-          },
-          "query": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "minLength": 1
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
+                  "query": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
           },
           "gateway": {
             "type": "object",
@@ -89,11 +126,23 @@
                 "minLength": 1
               },
               "apiKey": {
-                "type": "string"
-              },
-              "apiKeyEnvVarName": {
-                "type": "string",
-                "minLength": 1
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "envVarName": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["envVarName"],
+                    "additionalProperties": false
+                  }
+                ]
               },
               "headers": {
                 "type": "object",
@@ -133,492 +182,85 @@
               },
               "backends": {
                 "type": "object",
-                "properties": {
-                  "anthropic": {
-                    "type": "object",
-                    "properties": {
-                      "pathTemplate": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "headers": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "envVarName": {
-                                  "type": "string",
-                                  "minLength": 1
-                                }
-                              },
-                              "required": ["envVarName"],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "query": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": ["pathTemplate"],
-                    "additionalProperties": false
-                  },
-                  "openai": {
-                    "type": "object",
-                    "properties": {
-                      "pathTemplate": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "headers": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "envVarName": {
-                                  "type": "string",
-                                  "minLength": 1
-                                }
-                              },
-                              "required": ["envVarName"],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "query": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": ["pathTemplate"],
-                    "additionalProperties": false
-                  },
-                  "openai-compatible": {
-                    "type": "object",
-                    "properties": {
-                      "pathTemplate": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "headers": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "envVarName": {
-                                  "type": "string",
-                                  "minLength": 1
-                                }
-                              },
-                              "required": ["envVarName"],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "query": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      },
-                      "name": {
-                        "type": "string",
-                        "minLength": 1
-                      }
-                    },
-                    "required": ["pathTemplate"],
-                    "additionalProperties": false
-                  },
-                  "mistral": {
-                    "type": "object",
-                    "properties": {
-                      "pathTemplate": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "headers": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "envVarName": {
-                                  "type": "string",
-                                  "minLength": 1
-                                }
-                              },
-                              "required": ["envVarName"],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "query": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": ["pathTemplate"],
-                    "additionalProperties": false
-                  },
-                  "cohere": {
-                    "type": "object",
-                    "properties": {
-                      "pathTemplate": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "headers": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "envVarName": {
-                                  "type": "string",
-                                  "minLength": 1
-                                }
-                              },
-                              "required": ["envVarName"],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "query": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": ["pathTemplate"],
-                    "additionalProperties": false
-                  },
-                  "groq": {
-                    "type": "object",
-                    "properties": {
-                      "pathTemplate": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "headers": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "envVarName": {
-                                  "type": "string",
-                                  "minLength": 1
-                                }
-                              },
-                              "required": ["envVarName"],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "query": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": ["pathTemplate"],
-                    "additionalProperties": false
-                  },
-                  "xai": {
-                    "type": "object",
-                    "properties": {
-                      "pathTemplate": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "headers": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "envVarName": {
-                                  "type": "string",
-                                  "minLength": 1
-                                }
-                              },
-                              "required": ["envVarName"],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "query": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": ["pathTemplate"],
-                    "additionalProperties": false
-                  },
-                  "deepseek": {
-                    "type": "object",
-                    "properties": {
-                      "pathTemplate": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "headers": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "envVarName": {
-                                  "type": "string",
-                                  "minLength": 1
-                                }
-                              },
-                              "required": ["envVarName"],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "query": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": ["pathTemplate"],
-                    "additionalProperties": false
-                  },
-                  "perplexity": {
-                    "type": "object",
-                    "properties": {
-                      "pathTemplate": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "headers": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "envVarName": {
-                                  "type": "string",
-                                  "minLength": 1
-                                }
-                              },
-                              "required": ["envVarName"],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "query": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": ["pathTemplate"],
-                    "additionalProperties": false
-                  },
-                  "google": {
-                    "type": "object",
-                    "properties": {
-                      "pathTemplate": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "actionMap": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string"
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      },
-                      "headers": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "envVarName": {
-                                  "type": "string",
-                                  "minLength": 1
-                                }
-                              },
-                              "required": ["envVarName"],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "query": {
-                        "type": "object",
-                        "propertyNames": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "additionalProperties": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": ["pathTemplate"],
-                    "additionalProperties": false
-                  }
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1
                 },
-                "additionalProperties": false
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "vendor": {
+                      "type": "string",
+                      "enum": [
+                        "anthropic",
+                        "openai",
+                        "openai-compatible",
+                        "mistral",
+                        "cohere",
+                        "groq",
+                        "xai",
+                        "deepseek",
+                        "perplexity",
+                        "google"
+                      ]
+                    },
+                    "pathTemplate": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "actionMap": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "headers": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "additionalProperties": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "envVarName": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": ["envVarName"],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "query": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": ["vendor", "pathTemplate"],
+                  "additionalProperties": false
+                }
               }
             },
             "required": ["baseURL", "backends"],
@@ -694,18 +336,7 @@
                 },
                 "backend": {
                   "type": "string",
-                  "enum": [
-                    "anthropic",
-                    "openai",
-                    "openai-compatible",
-                    "mistral",
-                    "cohere",
-                    "groq",
-                    "xai",
-                    "deepseek",
-                    "perplexity",
-                    "google"
-                  ]
+                  "minLength": 1
                 },
                 "slug": {
                   "type": "string",
@@ -781,19 +412,27 @@
         "type": "string"
       },
       "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "provider": {
+        "anyOf": [
+          {
             "type": "string",
-            "minLength": 1
+            "pattern": "^[^:]+:."
           },
-          "model": {
-            "type": "string",
-            "minLength": 1
+          {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "minLength": 1
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["provider", "model"],
+            "additionalProperties": false
           }
-        },
-        "required": ["provider", "model"],
-        "additionalProperties": false
+        ]
       }
     }
   },

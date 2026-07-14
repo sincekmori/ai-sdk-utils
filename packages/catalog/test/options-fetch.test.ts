@@ -13,7 +13,7 @@ const gatewayConfig = Config.parse({
 			gateway: {
 				baseURL: "https://gateway.example.com/v1",
 				apiKey: "test-key", // inline so resolving needs no env var
-				backends: { anthropic: { pathTemplate: "anthropic/{slug}" } },
+				backends: { anthropic: { vendor: "anthropic", pathTemplate: "anthropic/{slug}" } },
 			},
 			models: [{ id: "claude-sonnet-4-6", backend: "anthropic", slug: "sonnet" }],
 		},
@@ -54,5 +54,19 @@ describe("options.fetch", () => {
 		expect(calls).toHaveLength(1);
 		// The custom fetch sees the final gateway URL: slug substituted, no placeholder.
 		expect(calls[0]).toContain("https://gateway.example.com/v1/anthropic/sonnet");
+	});
+
+	it("a per-provider fetch override wins over the global fetch", async () => {
+		const global = recordingFetch();
+		const local = recordingFetch();
+		const catalog = createCatalog(gatewayConfig, {
+			fetch: global.fetch,
+			providers: { acme: { fetch: local.fetch } },
+		});
+
+		await expect(doGenerate(catalog, "chat")).rejects.toThrow();
+
+		expect(local.calls).toHaveLength(1);
+		expect(global.calls).toHaveLength(0);
 	});
 });

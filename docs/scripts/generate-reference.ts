@@ -105,10 +105,6 @@ function typeLabel(rawNode: SchemaNode, locale: Locale): string {
 /** Lookup keys for a field path, from most to least specific. */
 function candidateKeys(path: string): string[] {
 	const keys = [path];
-	const wildcardBackend = path.replace(/\.backends\.[^.]+/u, ".backends.*");
-	if (wildcardBackend !== path) {
-		keys.push(wildcardBackend);
-	}
 	const providerSettings = path.replace("providers[].models[].settings.", "providers[].settings.");
 	if (providerSettings !== path) {
 		keys.push(providerSettings);
@@ -144,6 +140,14 @@ function visit(rawNode: SchemaNode, path: string): void {
 	if (isJsonValue(node)) {
 		return;
 	}
+	if (node.anyOf !== undefined) {
+		// A union (e.g. a role: "provider:model" string or an object): document
+		// each object member at the same path; scalar members need no section.
+		for (const entry of node.anyOf) {
+			visit(entry, path);
+		}
+		return;
+	}
 	if (node.type === "array" && node.items !== undefined) {
 		visit(node.items, `${path}[]`);
 		return;
@@ -176,10 +180,6 @@ function childSection(path: string): string | undefined {
 // ---------------------------------------------------------------------------
 // Rendering.
 
-function escapeCell(text: string): string {
-	return text.replaceAll("|", String.raw`\|`);
-}
-
 function renderRow(section: Section, entry: [string, SchemaNode], locale: Locale): string {
 	const [key, child] = entry;
 	const childPath = section.path === "" ? key : `${section.path}.${key}`;
@@ -198,7 +198,7 @@ function renderRow(section: Section, entry: [string, SchemaNode], locale: Locale
 		`\`${key}\``,
 		`\`${typeLabel(child, locale)}\``,
 		required,
-		escapeCell(description),
+		description.replaceAll("|", String.raw`\|`), // escape table-cell pipes
 	];
 	return `| ${cells.join(" | ")} |`;
 }

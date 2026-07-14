@@ -16,12 +16,13 @@ export const withUserSchemaPath = (raw) =>
 共存できます:
 
 - **direct** — バンドルされた `@ai-sdk/*` ベンダをそのまま使います。`{ "id": "openai" }` は
-  `@ai-sdk/openai` を `OPENAI_API_KEY` で直接呼び出します。`baseURL` / `apiKey` でエンドポイントを
-  上書きでき、Ollama のような OpenAI 互換サーバーもこれだけで(設定のみで)カバーできます。
+  `@ai-sdk/openai` を `OPENAI_API_KEY` で直接呼び出します。`vendor` ブロックの `baseURL` / `apiKey`
+  でエンドポイントを上書きでき、Ollama のような OpenAI 互換サーバーもこれだけで(設定のみで)
+  カバーできます。
 - **gateway** — 自前の LLM ゲートウェイの構成を記述する `gateway` ブロックを追加し、各モデルに
   `backend` のタグを付けると、リクエストがそちらへルーティングされます。追加のコードは不要です。
 - **resolver** — バンドルベンダにも Bearer トークン式ゲートウェイにも当てはまらない認証を持つ
-  プロバイダ(Amazon Bedrock、Google Vertex、Azure)は、`createCatalog(config, { resolvers })` で
+  プロバイダ(Amazon Bedrock、Google Vertex、Azure)は、`createCatalog(config, { providers })` で
   コード側から接続します。
 
 以下の例はリポジトリの
@@ -50,9 +51,9 @@ export const withUserSchemaPath = (raw) =>
 - `openai` プロバイダの `settings` ブロックは、そのすべてのモデルに継承される呼び出し設定の
   既定値です。`gpt-5.6-luna` は自分だけ `temperature` を上書きしています。設定はモデルハンドルに
   焼き込まれますが、呼び出しごとの上書きも可能です。
-- `ollama` プロバイダはエンドポイント上書きの例です: `vendor: "openai"` と `baseURL` の組み合わせで
-  任意の OpenAI 互換サーバーに接続できます。このサーバーは Responses API ではなく Chat Completions を
-  話すため、モデルに `api: "chat"` を設定しています。
+- `ollama` プロバイダはエンドポイント上書きの例です: `id: "openai"` と `baseURL` を持つ `vendor`
+  ブロックで任意の OpenAI 互換サーバーに接続できます。このサーバーは Responses API ではなく
+  Chat Completions を話すため、モデルに `api: "chat"` を設定しています。
 
 ## Advanced
 
@@ -62,18 +63,24 @@ export const withUserSchemaPath = (raw) =>
 <Code code={withUserSchemaPath(advanced)} lang="json" title="ai-sdk-catalog.advanced.json" />
 
 - `fireworks` は `openai-compatible` ベンダを使います。このベンダには標準のエンドポイントが
-  存在しないため `baseURL` が必須で、`name` がメタデータの名前空間を設定します。
-- `acme` は**ゲートウェイプロバイダ**です: `gateway` ブロックがゲートウェイの構成を記述し
-  (`apiKeyEnvVarName` の既定値は `AI_GATEWAY_API_KEY`)、各モデルが自分を提供する `backend` を
-  指名します。`pathTemplate` 内の `{slug}` はモデルの `slug`(無ければ `id`)に置換されます。
-  `google` バックエンドはモデルが URL 側に載るためパス全体が書き換えられ、ストリーミング/
-  非ストリーミングのアクション切り替えも `actionMap` で扱えます。
+  存在しないため、`vendor` ブロックで `baseURL` を設定し、キー(`apiKey` はリテラル文字列か
+  `{ "envVarName": "..." }`)とメタデータ名前空間の `name` も指定しています。
+- `acme` は**ゲートウェイプロバイダ**です: `gateway` ブロックがゲートウェイの構成を記述します
+  (`apiKey` を省略すると `AI_GATEWAY_API_KEY` を読み取ります)。`backends` は自由に選べるキーの
+  マップで、各エントリが話す `vendor` を指名します — 同じベンダを複数並べられます(この例では
+  `claude-eu` と `claude-us`)— 。各モデルは `backend` でキーを指名します。`pathTemplate` 内の
+  `{slug}` はモデルの `slug`(無ければ `id`)に置換されます。`google` バックエンドはモデルが
+  URL 側に載るためパス全体が書き換えられ、ストリーミング/非ストリーミングのアクション切り替えも
+  `actionMap` で扱えます。
 - このゲートウェイは `headers` と `query` も設定しています: すべてのリクエストに付与される
   追加ヘッダー — インライン値の `{apiKey}` はゲートウェイのキーに置換され
   (例: `"Bearer {apiKey}"`)、`envVarName` は APIM のサブスクリプションキーのような値を
   環境変数から読み取ります — と、パス書き換え後に付与される必須の `api-version` クエリ
   パラメータです。各バックエンドも自分の `headers` / `query` を持て、ゲートウェイレベルの
-  ものにマージされます(同名はバックエンド側が優先)。どちらも direct プロバイダでも使えます。
+  ものにマージされます(同名はバックエンド側が優先)。どちらも direct プロバイダの `vendor`
+  ブロックでも使えます。
+- この例の `roles` は短縮形の文字列 `"provider:model"` を使っています(最初の `:` で分割)。
+  他の例にあるオブジェクト形式 `{ "provider": ..., "model": ... }` と等価です。
 - モデル単位の `settings` はプロバイダの設定にマージされます: `gpt-5.6-luna` は継承した
   `maxOutputTokens` と `reasoningEffort` を保ったまま、`temperature` を上書きし
   `parallelToolCalls` を追加しています。
@@ -82,8 +89,9 @@ export const withUserSchemaPath = (raw) =>
 
 `createCatalog` は設定を前もって検証します: プロバイダ・モデル ID の一意性、すべてのロールが
 実在するプロバイダ + モデルの組を参照していること、そしてゲートウェイプロバイダでは各モデルが
-`gateway` ブロックに実際に設定された `backend` を指名していること。不正な入力は、すべての問題を
-パス付きで列挙した読みやすいエラーとして投げられます。
+`gateway` ブロックに実際に設定された `backend` キーを指名していること。すべてのオブジェクトは
+strict なので、未知のフィールドやタイプミスは黙って捨てられずに検証エラーになります。不正な
+入力は、すべての問題をパス付きで列挙した読みやすいエラーとして投げられます。
 
 `$schema` キーは任意で、実行時には無視されます。`./node_modules/ai-sdk-catalog/schema.json`
 (またはバージョン付き CDN の URL)を指すようにすると、エディタでの検証と補完が効きます。

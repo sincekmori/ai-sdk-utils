@@ -1,17 +1,33 @@
 // Copyright 2026 Shinsuke Mori
 // SPDX-License-Identifier: Apache-2.0
 
-import { loadSetting } from "@ai-sdk/provider-utils";
+import { loadApiKey, loadSetting } from "@ai-sdk/provider-utils";
 import * as z from "zod";
 
 /**
- * Extra request headers and query parameters, declared in the config. Both are
- * aimed at enterprise gateways whose transport needs more than a bearer token:
- * an APIM-style subscription-key header, tenant/routing headers, or a mandatory
- * `?api-version=...` on every request.
+ * Transport-level config values shared by every provider kind: secrets (API
+ * keys and header values that may come from the environment), extra request
+ * headers, and query parameters. Aimed at enterprise gateways whose transport
+ * needs more than a bearer token: an APIM-style subscription-key header,
+ * tenant/routing headers, or a mandatory `?api-version=...` on every request.
  *
  * Zod v4.
  */
+
+/**
+ * A reference to an environment variable, read lazily when the provider is
+ * first used — so declaring a provider you never call requires nothing.
+ */
+export const EnvVarRef = z.strictObject({ envVarName: z.string().min(1) });
+export type EnvVarRef = z.infer<typeof EnvVarRef>;
+
+/**
+ * An API key: a literal string, or `{ "envVarName": "..." }` to read it from
+ * that environment variable at first use. Prefer the env-var form to keep
+ * secrets out of the file.
+ */
+export const ApiKey = z.union([z.string().min(1), EnvVarRef]);
+export type ApiKey = z.infer<typeof ApiKey>;
 
 /**
  * One header value:
@@ -21,10 +37,7 @@ import * as z from "zod";
  *   - `{ "envVarName": "..." }` — read from that environment variable when the
  *     provider is first used (same laziness as the API key), sent verbatim.
  */
-export const HeaderValue = z.union([
-	z.string().min(1),
-	z.object({ envVarName: z.string().min(1) }),
-]);
+export const HeaderValue = z.union([z.string().min(1), EnvVarRef]);
 export type HeaderValue = z.infer<typeof HeaderValue>;
 
 /**
@@ -53,6 +66,46 @@ export function headersNeedApiKey(headers: RequestHeaders): boolean {
 	);
 }
 
+/** Options for {@link resolveApiKey}. */
+export interface ResolveApiKeyOptions {
+	/** Environment variable read when the config sets no key (gateway default). */
+	defaultEnvVarName?: string;
+	/** Names the owner in error messages, e.g. `gateway provider "acme"`. */
+	description: string;
+}
+
+/**
+ * Resolves a configured {@link ApiKey} to its concrete value: an inline string
+ * is returned as-is, an env-var reference is read (throwing a readable error
+ * when unset). An absent key falls back to `defaultEnvVarName` when given,
+ * otherwise resolves to undefined (the vendor SDK's own default applies).
+ */
+export function resolveApiKey(
+	value: ApiKey | undefined,
+	options: ResolveApiKeyOptions & { defaultEnvVarName: string },
+): string;
+export function resolveApiKey(
+	value: ApiKey | undefined,
+	options: ResolveApiKeyOptions,
+): string | undefined;
+export function resolveApiKey(
+	value: ApiKey | undefined,
+	options: ResolveApiKeyOptions,
+): string | undefined {
+	if (typeof value === "string") {
+		return value;
+	}
+	const envVarName = value?.envVarName ?? options.defaultEnvVarName;
+	if (envVarName === undefined) {
+		return undefined;
+	}
+	return loadApiKey({
+		apiKey: undefined,
+		environmentVariableName: envVarName,
+		description: options.description,
+	});
+}
+
 /** Options for {@link resolveHeaders}. */
 export interface ResolveHeadersOptions {
 	/** Substituted for `{apiKey}` in inline values. */
@@ -77,7 +130,7 @@ export function resolveHeaders(
 		if (typeof value === "string") {
 			if (value.includes(API_KEY_PLACEHOLDER) && apiKey === undefined) {
 				throw new Error(
-					`Header "${name}" for ${description} uses "${API_KEY_PLACEHOLDER}", but no "apiKey" or "apiKeyEnvVarName" is configured.`,
+					`Header "${name}" for ${description} uses "${API_KEY_PLACEHOLDER}", but no "apiKey" is configured.`,
 				);
 			}
 			resolved[name] = apiKey === undefined ? value : value.replaceAll(API_KEY_PLACEHOLDER, apiKey);

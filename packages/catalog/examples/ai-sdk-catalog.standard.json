@@ -28,9 +28,11 @@
     },
     {
       "id": "ollama",
-      "vendor": "openai",
-      "baseURL": "http://localhost:11434/v1",
-      "apiKey": "ollama",
+      "vendor": {
+        "id": "openai",
+        "baseURL": "http://localhost:11434/v1",
+        "apiKey": "ollama"
+      },
       "models": [
         {
           "id": "gpt-oss:20b",

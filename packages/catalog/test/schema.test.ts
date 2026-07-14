@@ -15,19 +15,29 @@ interface RawModel {
 	slug?: string;
 	settings?: Record<string, unknown>;
 }
-interface RawProvider {
-	id: string;
-	vendor?: string;
+interface RawVendor {
+	id?: string;
 	baseURL?: string;
-	apiKey?: string;
+	apiKey?: unknown;
 	headers?: Record<string, unknown>;
 	query?: Record<string, string>;
-	gateway?: Record<string, unknown>;
+}
+interface RawGateway {
+	baseURL?: string;
+	apiKey?: unknown;
+	headers?: Record<string, unknown>;
+	query?: Record<string, string>;
+	backends: Record<string, Record<string, unknown>>;
+}
+interface RawProvider {
+	id: string;
+	vendor?: string | RawVendor;
+	gateway?: RawGateway;
 	models: RawModel[];
 }
 interface RawConfig {
 	providers: RawProvider[];
-	roles: Record<string, { provider: string; model: string }>;
+	roles: Record<string, string | { provider: string; model: string }>;
 }
 
 // A minimal, fully valid config reused across tests: one plain provider and one
@@ -42,7 +52,7 @@ const valid: RawConfig = {
 			id: "acme",
 			gateway: {
 				baseURL: "https://gateway.example.com/v1",
-				backends: { anthropic: { pathTemplate: "anthropic/{slug}" } },
+				backends: { anthropic: { vendor: "anthropic", pathTemplate: "anthropic/{slug}" } },
 			},
 			models: [{ id: "claude-sonnet-5", backend: "anthropic" }],
 		},
@@ -54,6 +64,10 @@ const valid: RawConfig = {
 };
 
 const clone = <T>(value: T): T => structuredClone(value);
+
+// The gateway block of the second provider, known to exist in `valid`.
+// eslint-disable-next-line typescript/no-non-null-assertion -- the fixture always has it
+const gatewayOf = (config: RawConfig): RawGateway => config.providers[1].gateway!;
 
 // The validation error message for `data`, or "" if it validated.
 const errorOf = (data: unknown): string => {
@@ -89,6 +103,14 @@ describe("config schema", () => {
 		expect(errorOf(bad)).not.toBe("");
 	});
 
+	it("rejects unknown keys instead of silently dropping them", () => {
+		const bad = clone(valid) as RawConfig & {
+			providers: (RawProvider & Record<string, unknown>)[];
+		};
+		bad.providers[0].apiKeyEnvVarName = "OPENAI_API_KEY"; // pre-0.7 field
+		expect(errorOf(bad)).toContain("apiKeyEnvVarName");
+	});
+
 	// --- Invariants ---------------------------------------------------------
 
 	it("invariant 1: rejects duplicate provider ids", () => {
@@ -105,17 +127,47 @@ describe("config schema", () => {
 
 	it("invariant 3a: rejects a role referencing an unknown provider", () => {
 		const bad = clone(valid);
-		bad.roles.chat.provider = "mistral";
+		bad.roles.chat = { provider: "mistral", model: "claude-sonnet-5" };
 		expect(errorOf(bad)).toContain("unknown provider");
 	});
 
 	it("invariant 3b: rejects a role referencing an unknown model", () => {
 		const bad = clone(valid);
-		bad.roles.chat.model = "claude-ghost";
+		bad.roles.chat = { provider: "acme", model: "claude-ghost" };
 		expect(errorOf(bad)).toContain("unknown model");
 	});
 
-	// --- Gateway / backend coherence ----------------------------------------
+	it('invariant 4: rejects ":" in a provider id (it would break the role shorthand)', () => {
+		const bad = clone(valid);
+		bad.providers[0].id = "open:ai";
+		bad.roles.summarize = { provider: "open:ai", model: "gpt-5.6" };
+		expect(errorOf(bad)).toContain('must not contain ":"');
+	});
+
+	// --- Roles: string shorthand and object form ------------------------------
+
+	it("accepts the string shorthand and splits it at the first colon", () => {
+		const ok = clone(valid);
+		ok.roles.chat = "acme:claude-sonnet-5";
+		expect(errorOf(ok)).toBe("");
+	});
+
+	it("validates the shorthand's target like the object form", () => {
+		const bad = clone(valid);
+		bad.roles.chat = "acme:claude-ghost";
+		expect(errorOf(bad)).toContain("unknown model");
+		const badProvider = clone(valid);
+		badProvider.roles.chat = "mistral:claude-sonnet-5";
+		expect(errorOf(badProvider)).toContain("unknown provider");
+	});
+
+	it("rejects a shorthand with no colon", () => {
+		const bad = clone(valid);
+		bad.roles.chat = "claude-sonnet-5";
+		expect(errorOf(bad)).not.toBe("");
+	});
+
+	// --- Vendor / gateway coherence ----------------------------------------
 
 	it("requires a backend on a gateway provider's models", () => {
 		const bad = clone(valid);
@@ -123,7 +175,7 @@ describe("config schema", () => {
 		expect(errorOf(bad)).toContain('must set a "backend"');
 	});
 
-	it("rejects a backend not configured in the gateway block", () => {
+	it("rejects a backend key not configured in the gateway block", () => {
 		const bad = clone(valid);
 		bad.providers[1].models[0].backend = "openai";
 		expect(errorOf(bad)).toContain("is not configured");
@@ -135,10 +187,10 @@ describe("config schema", () => {
 		expect(errorOf(bad)).toContain('has no "gateway" block');
 	});
 
-	it("rejects direct-vendor fields alongside a gateway block", () => {
+	it("rejects vendor alongside a gateway block", () => {
 		const bad = clone(valid);
-		bad.providers[1].baseURL = "https://elsewhere.example.com";
-		expect(errorOf(bad)).toContain("baseURL");
+		bad.providers[1].vendor = "anthropic";
+		expect(errorOf(bad)).toContain('both "vendor" and "gateway"');
 	});
 
 	it("requires baseURL for a direct openai-compatible provider", () => {
@@ -151,46 +203,55 @@ describe("config schema", () => {
 
 	// --- Headers / query ------------------------------------------------------
 
-	it("accepts headers and query on a direct provider, a gateway, and a backend", () => {
+	it("accepts headers and query on a vendor block, a gateway, and a backend", () => {
 		const ok = clone(valid);
-		ok.providers[0].apiKey = "sk-123";
-		ok.providers[0].headers = {
-			"x-team-id": "platform",
-			"api-key": "{apiKey}",
-			"Ocp-Apim-Subscription-Key": { envVarName: "APIM_KEY" },
+		ok.providers[0].vendor = {
+			apiKey: { envVarName: "OPENAI_API_KEY" },
+			headers: {
+				"x-team-id": "platform",
+				"api-key": "{apiKey}",
+				"Ocp-Apim-Subscription-Key": { envVarName: "APIM_KEY" },
+			},
+			query: { "api-version": "2026-01-01" },
 		};
-		ok.providers[0].query = { "api-version": "2026-01-01" };
-		const gateway = ok.providers[1].gateway as {
-			headers?: unknown;
-			query?: unknown;
-			backends: Record<string, Record<string, unknown>>;
-		};
+		const gateway = gatewayOf(ok);
+		gateway.apiKey = { envVarName: "ACME_API_KEY" };
 		gateway.headers = { Authorization: "Bearer {apiKey}" };
 		gateway.query = { "api-version": "2026-01-01" };
 		gateway.backends.anthropic.headers = { "x-route": "anthropic" };
 		expect(errorOf(ok)).toBe("");
 	});
 
-	it("rejects headers/query alongside a gateway block (they go inside it)", () => {
+	it("rejects {apiKey} in a vendor block's headers without a key to substitute", () => {
 		const bad = clone(valid);
-		bad.providers[1].headers = { "x-team-id": "platform" };
-		bad.providers[1].query = { "api-version": "2026-01-01" };
-		expect(errorOf(bad)).toContain("headers");
-		expect(errorOf(bad)).toContain("query");
-	});
-
-	it("rejects {apiKey} in a direct provider's headers without a key to substitute", () => {
-		const bad = clone(valid);
-		bad.providers[0].headers = { Authorization: "Bearer {apiKey}" };
+		bad.providers[0].vendor = { headers: { Authorization: "Bearer {apiKey}" } };
 		expect(errorOf(bad)).toContain("{apiKey}");
 	});
 
+	// --- Gateway backends -----------------------------------------------------
+
 	it("rejects a gateway pathTemplate missing the {slug} placeholder", () => {
 		const bad = clone(valid);
-		(
-			bad.providers[1].gateway as { backends: Record<string, { pathTemplate: string }> }
-		).backends.anthropic.pathTemplate = "anthropic/fixed";
-		expect(errorOf(bad)).not.toBe("");
+		gatewayOf(bad).backends.anthropic.pathTemplate = "anthropic/fixed";
+		expect(errorOf(bad)).toContain("{slug}");
+	});
+
+	it('requires {action} in a "google" backend\'s pathTemplate', () => {
+		const bad = clone(valid);
+		gatewayOf(bad).backends.anthropic = { vendor: "google", pathTemplate: "google/{slug}" };
+		expect(errorOf(bad)).toContain("{action}");
+	});
+
+	it('rejects actionMap on a non-"google" backend', () => {
+		const bad = clone(valid);
+		gatewayOf(bad).backends.anthropic.actionMap = { a: "b" };
+		expect(errorOf(bad)).toContain("actionMap");
+	});
+
+	it("rejects a backend without a vendor", () => {
+		const bad = clone(valid);
+		delete gatewayOf(bad).backends.anthropic.vendor;
+		expect(errorOf(bad)).toContain("vendor");
 	});
 });
 

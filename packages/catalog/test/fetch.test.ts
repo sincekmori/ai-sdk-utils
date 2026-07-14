@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { GoogleBackend } from "../src/backends.ts";
 import {
 	createBodyModelFetch,
 	createGeminiFetch,
 	createQueryFetch,
+	type GeminiRewrite,
 	MODEL_SLUG_PLACEHOLDER,
 } from "../src/fetch.ts";
 
-const googleBackend: GoogleBackend = {
+const googleBackend: GeminiRewrite = {
 	pathTemplate: "google/{slug}:{action}",
 	actionMap: { streamGenerateContent: "customStreamGenerateContent" },
 };

@@ -3,9 +3,39 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import { headersNeedApiKey, resolveHeaders } from "../src/headers.ts";
+import { headersNeedApiKey, resolveApiKey, resolveHeaders } from "../src/headers.ts";
 
 const DESCRIPTION = { description: 'provider "acme"' };
+
+describe("resolveApiKey", () => {
+	it("returns an inline string as-is", () => {
+		expect(resolveApiKey("sk-123", DESCRIPTION)).toBe("sk-123");
+	});
+
+	it("reads an envVarName reference from the environment", () => {
+		vi.stubEnv("ACME_API_KEY", "sk-from-env");
+		expect(resolveApiKey({ envVarName: "ACME_API_KEY" }, DESCRIPTION)).toBe("sk-from-env");
+		vi.unstubAllEnvs();
+	});
+
+	it("falls back to defaultEnvVarName when the config sets no key", () => {
+		vi.stubEnv("AI_GATEWAY_API_KEY", "sk-default");
+		expect(
+			resolveApiKey(undefined, { defaultEnvVarName: "AI_GATEWAY_API_KEY", ...DESCRIPTION }),
+		).toBe("sk-default");
+		vi.unstubAllEnvs();
+	});
+
+	it("resolves to undefined without a key or default (the vendor SDK's default applies)", () => {
+		expect(resolveApiKey(undefined, DESCRIPTION)).toBeUndefined();
+	});
+
+	it("throws a readable error when the environment variable is unset", () => {
+		expect(() =>
+			resolveApiKey({ envVarName: "AI_SDK_CATALOG_TEST_UNSET_KEY" }, DESCRIPTION),
+		).toThrow(/AI_SDK_CATALOG_TEST_UNSET_KEY/u);
+	});
+});
 
 describe("resolveHeaders", () => {
 	it("passes inline string values through as-is", () => {

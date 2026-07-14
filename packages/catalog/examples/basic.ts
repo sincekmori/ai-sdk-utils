@@ -39,20 +39,22 @@ const fetched: unknown = await response.json();
 createCatalog(fetched as Config);
 
 // --- 3. An OpenAI-compatible server (Ollama), still config-only ------------
-// `vendor: openai` reuses @ai-sdk/openai; `baseURL` points it at the local
+// The vendor block reuses @ai-sdk/openai; `baseURL` points it at the local
 // endpoint — no resolver code, Ollama is just a direct provider. (Providers with
-// bespoke auth like Bedrock/Vertex use createCatalog(config, { resolvers }).)
+// bespoke auth like Bedrock/Vertex use createCatalog(config, { providers }).)
 const local = createCatalog({
 	providers: [
 		{
 			id: "ollama",
-			vendor: "openai",
-			baseURL: "http://localhost:11434/v1",
-			apiKey: "ollama", // required by the client but ignored by Ollama
+			vendor: {
+				id: "openai",
+				baseURL: "http://localhost:11434/v1",
+				apiKey: "ollama", // required by the client but ignored by Ollama
+			},
 			models: [{ id: "gpt-oss:20b", api: "chat" }], // Ollama speaks Chat Completions
 		},
 	],
-	roles: { local: { provider: "ollama", model: "gpt-oss:20b" } },
+	roles: { local: "ollama:gpt-oss:20b" }, // "provider:model" splits at the first ":"
 });
 await generateText({ model: local.modelForRole("local"), prompt: "ping" });
 

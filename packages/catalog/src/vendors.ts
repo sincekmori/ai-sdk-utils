@@ -14,7 +14,8 @@ import type { FetchFunction } from "@ai-sdk/provider-utils";
 import { createXai } from "@ai-sdk/xai";
 import type { LanguageModel } from "ai";
 
-import { type ModelApi, Vendor } from "./schema.ts";
+import type { ModelApi } from "./schema.ts";
+import { Vendor } from "./vendor-ids.ts";
 
 /**
  * The call surfaces a bundled `@ai-sdk/*` provider may expose. Every provider

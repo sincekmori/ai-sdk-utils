@@ -3,7 +3,6 @@
 
 import type { FetchFunction } from "@ai-sdk/provider-utils";
 
-import type { GoogleBackend } from "./backends.ts";
 import type { QueryParams } from "./headers.ts";
 
 /**
@@ -60,6 +59,14 @@ export function createQueryFetch(query: QueryParams, baseFetch?: FetchFunction):
 	};
 }
 
+/** The subset of a `google` backend's config the URL rewrite needs. */
+export interface GeminiRewrite {
+	/** Gateway path layout; must contain `{slug}` and `{action}`. */
+	pathTemplate: string;
+	/** Per-method renames of the Gemini action segment. */
+	actionMap?: Record<string, string> | undefined;
+}
+
 /** Options for {@link createGeminiFetch}. */
 export interface GeminiFetchOptions {
 	/** Maps a model id to the slug substituted into the gateway path. */
@@ -73,15 +80,15 @@ export interface GeminiFetchOptions {
 }
 
 /**
- * Wraps fetch for the Google gateway backend, whose URL already carries the
+ * Wraps fetch for a `google` gateway backend, whose URL already carries the
  * model (`.../models/{model}:{method}`). Rewrites it to the gateway layout
- * described by {@link GoogleBackend.pathTemplate}, renaming the method via
- * {@link GoogleBackend.actionMap} and preserving the query string (e.g.
+ * described by {@link GeminiRewrite.pathTemplate}, renaming the method via
+ * {@link GeminiRewrite.actionMap} and preserving the query string (e.g.
  * `?alt=sse`).
  */
 export function createGeminiFetch(
 	baseURL: string,
-	backend: GoogleBackend,
+	backend: GeminiRewrite,
 	options: GeminiFetchOptions,
 ): FetchFunction {
 	const { slugFor, baseFetch } = options;

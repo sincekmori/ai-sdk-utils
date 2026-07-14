@@ -2,85 +2,68 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { FetchFunction } from "@ai-sdk/provider-utils";
-import { defaultSettingsMiddleware, type LanguageModel, wrapLanguageModel } from "ai";
+import type { LanguageModel } from "ai";
 import * as z from "zod";
 
 import { createDirectRuntime, createGatewayRuntime, type ProviderRuntime } from "./gateway.ts";
-import {
-	Config,
-	type Model,
-	type ModelKey,
-	type ModelSettings,
-	type ProviderResolver,
-} from "./schema.ts";
+import { parseRoleRef, vendorBlockOf } from "./invariants.ts";
+import { Config, type Model, type ModelKey, type Provider } from "./schema.ts";
+import { mergeSettings, withSettings } from "./settings.ts";
 import { isVendor } from "./vendors.ts";
 
 /**
- * Merges a provider's default settings with a model's own settings.
- * Model settings win for scalar fields; `providerOptions` is merged per
- * provider namespace so a model can add or override individual options without
- * dropping the provider-level ones.
+ * Builds one provider's runtime from its config and any override. A `resolve`
+ * override replaces the runtime entirely (it looks entries up lazily, once
+ * `meta` is fully indexed); otherwise the config decides between the gateway
+ * and the direct runtime, with the override's `fetch` (then the global one) as
+ * the base fetch.
  */
-function mergeSettings(base?: ModelSettings, override?: ModelSettings): ModelSettings | undefined {
-	if (!base) {
-		return override;
+function createProviderRuntime(
+	provider: Provider,
+	context: {
+		override: ProviderOverride | undefined;
+		globalFetch: FetchFunction | undefined;
+		meta: Map<ModelKey, ModelEntry>;
+	},
+): ProviderRuntime {
+	const { override, globalFetch, meta } = context;
+	const baseFetch = override?.fetch ?? globalFetch;
+	if (override?.resolve) {
+		const { resolve } = override;
+		return {
+			resolve: (modelId): LanguageModel => {
+				const entry = meta.get(`${provider.id}:${modelId}`);
+				if (!entry) {
+					throw new Error(`Unknown model "${provider.id}:${modelId}".`);
+				}
+				return resolve(entry);
+			},
+		};
 	}
-	if (!override) {
-		return base;
+	if (provider.gateway) {
+		return createGatewayRuntime(provider.id, provider.gateway, {
+			models: provider.models,
+			baseFetch,
+		});
 	}
-	const merged: ModelSettings = { ...base, ...override };
-	if (base.providerOptions || override.providerOptions) {
-		const providerOptions: NonNullable<ModelSettings["providerOptions"]> = {};
-		const namespaces = new Set([
-			...Object.keys(base.providerOptions ?? {}),
-			...Object.keys(override.providerOptions ?? {}),
-		]);
-		for (const ns of namespaces) {
-			providerOptions[ns] = {
-				...base.providerOptions?.[ns],
-				...override.providerOptions?.[ns],
-			};
-		}
-		merged.providerOptions = providerOptions;
+	const block = vendorBlockOf(provider);
+	const vendor = block?.id ?? provider.id;
+	if (!isVendor(vendor)) {
+		throw new Error(
+			`Provider "${provider.id}" is not a built-in vendor (resolved vendor "${vendor}"). Set "vendor" to a supported vendor, add a "gateway" block, or pass a "resolve" override in createCatalog options.`,
+		);
 	}
-	return merged;
-}
-
-/**
- * Bakes the config's default call settings (temperature, topP, ...) into a
- * model handle via `defaultSettingsMiddleware`, so they apply to every call
- * unless overridden at the call site. Returns the handle untouched when there
- * are no settings, when it is a bare model-id string, or for legacy v2 models
- * (which `wrapLanguageModel` does not accept).
- */
-function withSettings(model: LanguageModel, settings?: ModelSettings): LanguageModel {
-	if (!settings || typeof model === "string" || model.specificationVersion === "v2") {
-		return model;
-	}
-	return wrapLanguageModel({
-		model,
-		middleware: defaultSettingsMiddleware({ settings }),
-	});
-}
-
-/** Options for {@link createCatalog}. */
-export interface CatalogOptions {
-	/**
-	 * Per-provider resolver overrides, keyed by provider id. An override always
-	 * wins, so it can stand in for a built-in vendor or a gateway provider too.
-	 * Required for any provider whose vendor is not built in and which has no
-	 * `gateway` block.
-	 */
-	resolvers?: Record<string, ProviderResolver>;
-	/**
-	 * Base fetch every provider's HTTP requests are sent through (default:
-	 * `globalThis.fetch`). For gateway providers it runs *after* the gateway
-	 * path rewriting, so it sees the final gateway URL and body — the place to
-	 * add logging, auth, or a gateway-specific payload adjustment without
-	 * patching `globalThis.fetch`. Resolver-backed providers are not affected
-	 * (their resolver builds its own models).
-	 */
-	fetch?: FetchFunction;
+	return createDirectRuntime(
+		vendor,
+		{
+			baseURL: block?.baseURL,
+			apiKey: block?.apiKey,
+			name: block?.name,
+			headers: block?.headers,
+			query: block?.query,
+		},
+		baseFetch,
+	);
 }
 
 /**
@@ -93,6 +76,52 @@ export interface ModelEntry extends Model {
 	key: ModelKey;
 }
 
+/**
+ * Resolves a model to a runtime handle, for a provider that is neither a
+ * built-in vendor nor a `gateway` block — for example Amazon Bedrock, Google
+ * Vertex, or Azure, whose auth doesn't fit a bearer token. Receives the full
+ * {@link ModelEntry}, so it can pick the call surface from `api` and read any
+ * other model metadata it needs.
+ */
+export type ProviderResolver = (model: ModelEntry) => LanguageModel;
+
+/**
+ * Per-provider runtime overrides, keyed by provider id in
+ * {@link CatalogOptions.providers}.
+ */
+export interface ProviderOverride {
+	/**
+	 * Resolves this provider's models in code, replacing the config-driven
+	 * runtime entirely. An override always wins, so it can stand in for a
+	 * built-in vendor or a gateway provider too. Required for a provider whose
+	 * vendor is not built in and which has no `gateway` block. When set,
+	 * `fetch` is ignored — the resolver owns its transport.
+	 */
+	resolve?: ProviderResolver;
+	/**
+	 * Base fetch for this provider only, taking precedence over the global
+	 * {@link CatalogOptions.fetch} — e.g. to inject a short-lived OAuth token
+	 * for one gateway without affecting the others.
+	 */
+	fetch?: FetchFunction;
+}
+
+/** Options for {@link createCatalog}. */
+export interface CatalogOptions {
+	/** Per-provider runtime overrides, keyed by provider id. */
+	providers?: Record<string, ProviderOverride>;
+	/**
+	 * Base fetch every provider's HTTP requests are sent through (default:
+	 * `globalThis.fetch`). For gateway providers it runs *after* the gateway
+	 * path rewriting, so it sees the final gateway URL and body — the place to
+	 * add logging, auth, or a gateway-specific payload adjustment without
+	 * patching `globalThis.fetch`. A per-provider `fetch` override wins;
+	 * resolver-backed providers are not affected (their resolver builds its
+	 * own models).
+	 */
+	fetch?: FetchFunction;
+}
+
 /** A role resolved to a model key plus the model's metadata. */
 export interface RoleEntry {
 	key: ModelKey;
@@ -103,7 +132,7 @@ export interface RoleEntry {
  * The catalog built from a {@link Config}: a metadata index, role lookups, and
  * lazily-resolved model handles. The single source of truth is the config; each
  * provider decides how its models become real handles (a direct `@ai-sdk/*`
- * vendor, your own gateway, or a custom resolver).
+ * vendor, your own gateway, or a `resolve` override).
  */
 export interface Catalog {
 	/** Metadata for every model, keyed by `provider:model`. */
@@ -153,41 +182,14 @@ export function createCatalog(config: Config, options: CatalogOptions = {}): Cat
 	const runtimeByProvider = new Map<string, ProviderRuntime>();
 
 	for (const provider of cfg.providers) {
-		const override = options.resolvers?.[provider.id];
-		if (override) {
-			// A resolver override exposes no underlying instance.
-			runtimeByProvider.set(provider.id, { resolve: override });
-		} else if (provider.gateway) {
-			runtimeByProvider.set(
-				provider.id,
-				createGatewayRuntime(provider.id, provider.gateway, {
-					models: provider.models,
-					baseFetch: options.fetch,
-				}),
-			);
-		} else {
-			const vendor = provider.vendor ?? provider.id;
-			if (!isVendor(vendor)) {
-				throw new Error(
-					`Provider "${provider.id}" is not a built-in vendor (resolved vendor "${vendor}"). Set "vendor" to a supported vendor, add a "gateway" block, or pass a resolver in createCatalog options.`,
-				);
-			}
-			runtimeByProvider.set(
-				provider.id,
-				createDirectRuntime(
-					vendor,
-					{
-						baseURL: provider.baseURL,
-						apiKey: provider.apiKey,
-						apiKeyEnvVarName: provider.apiKeyEnvVarName,
-						name: provider.name,
-						headers: provider.headers,
-						query: provider.query,
-					},
-					options.fetch,
-				),
-			);
-		}
+		runtimeByProvider.set(
+			provider.id,
+			createProviderRuntime(provider, {
+				override: options.providers?.[provider.id],
+				globalFetch: options.fetch,
+				meta,
+			}),
+		);
 
 		for (const m of provider.models) {
 			const key: ModelKey = `${provider.id}:${m.id}`;
@@ -233,7 +235,8 @@ export function createCatalog(config: Config, options: CatalogOptions = {}): Cat
 
 	const roles: Record<string, RoleEntry> = {};
 	for (const [role, ref] of Object.entries(cfg.roles)) {
-		const key: ModelKey = `${ref.provider}:${ref.model}`;
+		const target = parseRoleRef(ref);
+		const key: ModelKey = `${target.provider}:${target.model}`;
 		const entry = meta.get(key);
 		// entry is guaranteed by Config validation; the guard keeps types honest.
 		if (!entry) {

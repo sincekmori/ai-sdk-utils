@@ -4,73 +4,91 @@
 import type * as z from "zod";
 
 import { API_KEY_PLACEHOLDER, headersNeedApiKey } from "./headers.ts";
-import type { Provider, RoleRef } from "./schema.ts";
+import type { Provider, RoleRef, RoleTarget, VendorBlock } from "./schema.ts";
 
 /**
  * Whole-config invariants for {@link Config}: uniqueness, gateway/backend
  * coherence, and referential integrity. Structural validation lives in the
  * field schemas; these checks need the full object, so they run in the
- * schema's `superRefine`.
+ * schema's `superRefine`. The small config helpers shared with the catalog
+ * (`vendorBlockOf`, `parseRoleRef`) live here too.
  */
 
 /** The shape `Config`'s refinement receives (its base object, pre-refinement). */
 interface ConfigShape {
+	$schema?: string | undefined;
 	providers: Provider[];
 	roles: Record<string, RoleRef>;
 }
 
 type Ctx = z.core.$RefinementCtx<ConfigShape>;
 
-/** Fields of a direct provider that a gateway provider must not set. */
-const DIRECT_ONLY_FIELDS = [
-	"vendor",
-	"baseURL",
-	"apiKey",
-	"apiKeyEnvVarName",
-	"name",
-	"headers",
-	"query",
-] as const;
+/**
+ * A direct provider's vendor block, with the string shorthand normalized to
+ * `{ id }`. Undefined when the provider sets no `vendor` at all (its vendor
+ * then defaults to the provider id, with no overrides).
+ */
+export function vendorBlockOf(p: Provider): VendorBlock | undefined {
+	return typeof p.vendor === "string" ? { id: p.vendor } : p.vendor;
+}
+
+/**
+ * Normalizes a role reference to its `{ provider, model }` target. The string
+ * shorthand splits at the **first** `:`, so model ids may contain colons
+ * (`"ollama:qwen3.6:35b"` -> provider `ollama`, model `qwen3.6:35b`).
+ */
+export function parseRoleRef(ref: RoleRef): RoleTarget {
+	if (typeof ref === "string") {
+		const separator = ref.indexOf(":");
+		return { provider: ref.slice(0, separator), model: ref.slice(separator + 1) };
+	}
+	return ref;
+}
 
 /** Per-kind coherence of a provider's own fields. */
 export function checkProviderFields(p: Provider, i: number, ctx: Ctx): void {
+	if (p.id.includes(":")) {
+		// ":" would make the "provider:model" role shorthand ambiguous.
+		ctx.addIssue({
+			code: "custom",
+			message: `Provider id "${p.id}" must not contain ":".`,
+			path: ["providers", i, "id"],
+			input: p.id,
+		});
+	}
 	if (p.gateway !== undefined) {
-		// A gateway provider configures its endpoint/key inside the `gateway`
-		// block; the direct-vendor fields don't apply and would be ignored.
-		for (const field of DIRECT_ONLY_FIELDS) {
-			if (p[field] !== undefined) {
-				ctx.addIssue({
-					code: "custom",
-					message: `Provider "${p.id}" sets "${field}" alongside "gateway"; put it inside the "gateway" block, or drop the "gateway" block.`,
-					path: ["providers", i, field],
-					input: p[field],
-				});
-			}
+		if (p.vendor !== undefined) {
+			ctx.addIssue({
+				code: "custom",
+				message: `Provider "${p.id}" sets both "vendor" and "gateway"; a provider is either direct or gateway-routed.`,
+				path: ["providers", i, "vendor"],
+				input: p.vendor,
+			});
 		}
 		return;
 	}
-	if ((p.vendor ?? p.id) === "openai-compatible" && p.baseURL === undefined) {
+	const block = vendorBlockOf(p);
+	if ((block?.id ?? p.id) === "openai-compatible" && block?.baseURL === undefined) {
 		// The OpenAI-compatible vendor has no canonical endpoint.
 		ctx.addIssue({
 			code: "custom",
-			message: `Provider "${p.id}" uses the "openai-compatible" vendor and must set a "baseURL".`,
-			path: ["providers", i, "baseURL"],
-			input: p.baseURL,
+			message: `Provider "${p.id}" uses the "openai-compatible" vendor and must set a "baseURL" in its "vendor" block.`,
+			path: ["providers", i, "vendor"],
+			input: p.vendor,
 		});
 	}
 	if (
-		p.headers !== undefined &&
-		headersNeedApiKey(p.headers) &&
-		p.apiKey === undefined &&
-		p.apiKeyEnvVarName === undefined
+		block?.headers !== undefined &&
+		headersNeedApiKey(block.headers) &&
+		block.apiKey === undefined
 	) {
 		// A vendor's own default key (e.g. OPENAI_API_KEY) is read inside the
 		// SDK and never surfaces here, so there is nothing to substitute.
 		ctx.addIssue({
 			code: "custom",
-			message: `Provider "${p.id}" uses "${API_KEY_PLACEHOLDER}" in "headers" but sets neither "apiKey" nor "apiKeyEnvVarName".`,
-			path: ["providers", i, "headers"],
-			input: p.headers,
+			message: `Provider "${p.id}" uses "${API_KEY_PLACEHOLDER}" in "vendor.headers" but its "vendor" block sets no "apiKey".`,
+			path: ["providers", i, "vendor", "headers"],
+			input: block.headers,
 		});
 	}
 }
@@ -150,20 +168,23 @@ export function configInvariants(cfg: ConfigShape, ctx: Ctx): void {
 	// 2. every role must reference an existing provider+model
 	const index = new Map(cfg.providers.map((p) => [p.id, new Set(p.models.map((m) => m.id))]));
 	for (const [role, ref] of Object.entries(cfg.roles)) {
-		const models = index.get(ref.provider);
+		const target = parseRoleRef(ref);
+		// The string shorthand has no sub-fields to point at.
+		const isShorthand = typeof ref === "string";
+		const models = index.get(target.provider);
 		if (!models) {
 			ctx.addIssue({
 				code: "custom",
-				message: `Role "${role}" references unknown provider "${ref.provider}".`,
-				path: ["roles", role, "provider"],
-				input: ref.provider,
+				message: `Role "${role}" references unknown provider "${target.provider}".`,
+				path: isShorthand ? ["roles", role] : ["roles", role, "provider"],
+				input: target.provider,
 			});
-		} else if (!models.has(ref.model)) {
+		} else if (!models.has(target.model)) {
 			ctx.addIssue({
 				code: "custom",
-				message: `Role "${role}" references unknown model "${ref.provider}:${ref.model}".`,
-				path: ["roles", role, "model"],
-				input: ref.model,
+				message: `Role "${role}" references unknown model "${target.provider}:${target.model}".`,
+				path: isShorthand ? ["roles", role] : ["roles", role, "model"],
+				input: target.model,
 			});
 		}
 	}
