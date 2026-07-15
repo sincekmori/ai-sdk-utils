@@ -11,9 +11,6 @@
     }
   ],
   "roles": {
-    "chat": {
-      "provider": "openai",
-      "model": "gpt-5.6"
-    }
+    "chat": "openai:gpt-5.6"
   }
 }

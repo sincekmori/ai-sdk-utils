@@ -54,15 +54,14 @@ The smallest valid config declares one provider, one model, and one role:
     }
   ],
   "roles": {
-    "chat": {
-      "provider": "openai",
-      "model": "gpt-5.6"
-    }
+    "chat": "openai:gpt-5.6"
   }
 }
 ```
 
-`{ "id": "openai" }` calls `@ai-sdk/openai` directly, reading `OPENAI_API_KEY` out of the box. The
+`{ "id": "openai" }` calls `@ai-sdk/openai` directly, reading `OPENAI_API_KEY` out of the box. A
+role points at a model as the `"provider:model"` shorthand (an equivalent
+`{ "provider": ..., "model": ... }` object form also works). The
 `$schema` line is optional — with it, your editor validates and autocompletes the file. See the
 [configuration file guide](../configuration/) for the full tour and the
 [configuration reference](../reference/) for every field.

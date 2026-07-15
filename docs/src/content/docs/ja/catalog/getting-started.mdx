@@ -55,15 +55,14 @@ bun add ai-sdk-catalog ai zod
     }
   ],
   "roles": {
-    "chat": {
-      "provider": "openai",
-      "model": "gpt-5.6"
-    }
+    "chat": "openai:gpt-5.6"
   }
 }
 ```
 
 `{ "id": "openai" }` は `@ai-sdk/openai` を直接呼び出し、そのまま `OPENAI_API_KEY` を読み取ります。
+ロールは `"provider:model"` の短縮形でモデルを指します(同等の
+`{ "provider": ..., "model": ... }` というオブジェクト形式も使えます)。
 `$schema` の行は任意です — 指定するとエディタがファイルを検証・補完します。全体像は
 [設定ファイルガイド](../configuration/)、全フィールドは[設定リファレンス](../reference/)を
 参照してください。
