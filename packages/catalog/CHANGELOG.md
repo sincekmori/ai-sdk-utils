@@ -1,5 +1,11 @@
 # ai-sdk-catalog
 
+## 0.8.0
+
+### Minor Changes
+
+- d6af2c0: Add an optional per-model `cost` field — a price sheet in models.dev vocabulary (`input`/`output`/`cacheRead`/`cacheWrite`, USD per 1M tokens; prices above $1,000/1M are rejected as unit mix-ups), exposed via `meta`/`metaForRole` for app-side cost accounting.
+
 ## 0.7.0
 
 ### Minor Changes
