@@ -1,5 +1,11 @@
 # ai-sdk-catalog
 
+## 0.9.0
+
+### Minor Changes
+
+- 5a8f119: feat(catalog): fill a model's missing `cost` from an embedded models.dev price snapshot resolved via the model's vendor (direct vendor or gateway backend); an explicit `cost` in the config always wins
+
 ## 0.8.0
 
 ### Minor Changes
