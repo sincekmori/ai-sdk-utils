@@ -40,14 +40,18 @@ The smallest valid config: one direct vendor, one model, one role.
 
 ## Standard
 
-Several direct vendors, inherited default call settings, and a local OpenAI-compatible server
-(Ollama) — still config-only.
+Several direct vendors, inherited default call settings, a per-model price sheet, and a local
+OpenAI-compatible server (Ollama) — still config-only.
 
 <Code code={withUserSchemaPath(standard)} lang="json" title="ai-sdk-catalog.standard.json" />
 
 - The `openai` provider's `settings` block sets default call settings inherited by every one of its
   models; `gpt-5.6-luna` overrides `temperature` for itself only. Settings are baked into the model
   handle, and remain overridable per call.
+- The `anthropic` model declares a `cost` block — its price sheet in the billing buckets of
+  [models.dev](https://models.dev), in USD per 1 million tokens. The catalog never computes with
+  it; read it back via `meta` / `metaForRole` for your own cost accounting. A price no real model
+  could have (above $1,000/1M — a per-token or per-1K unit mix-up) fails validation.
 - The `ollama` provider shows the endpoint override: a `vendor` block with `id: "openai"` and a
   `baseURL` reaches any OpenAI-compatible server. Its model sets `api: "chat"` because the server
   speaks Chat Completions rather than the Responses API.

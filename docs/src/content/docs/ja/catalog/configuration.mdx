@@ -43,14 +43,18 @@ export const withUserSchemaPath = (raw) =>
 
 ## Standard
 
-複数の直接ベンダ、継承される呼び出し設定の既定値、そしてローカルの OpenAI 互換サーバー(Ollama)—
-これでもまだ設定のみです。
+複数の直接ベンダ、継承される呼び出し設定の既定値、モデルごとの価格表、そしてローカルの
+OpenAI 互換サーバー(Ollama)— これでもまだ設定のみです。
 
 <Code code={withUserSchemaPath(standard)} lang="json" title="ai-sdk-catalog.standard.json" />
 
 - `openai` プロバイダの `settings` ブロックは、そのすべてのモデルに継承される呼び出し設定の
   既定値です。`gpt-5.6-luna` は自分だけ `temperature` を上書きしています。設定はモデルハンドルに
   焼き込まれますが、呼び出しごとの上書きも可能です。
+- `anthropic` のモデルは `cost` ブロックを宣言しています: [models.dev](https://models.dev) の
+  課金バケットに従う価格表で、単位は 100 万トークンあたりの USD。カタログ自身はこれで計算せず、
+  `meta` / `metaForRole` から読み出してアプリ側のコスト計算に使います。現実のモデルにあり得ない
+  価格($1,000/1M 超 — トークン単価や 1K 単位との取り違え)は検証エラーになります。
 - `ollama` プロバイダはエンドポイント上書きの例です: `id: "openai"` と `baseURL` を持つ `vendor`
   ブロックで任意の OpenAI 互換サーバーに接続できます。このサーバーは Responses API ではなく
   Chat Completions を話すため、モデルに `api: "chat"` を設定しています。

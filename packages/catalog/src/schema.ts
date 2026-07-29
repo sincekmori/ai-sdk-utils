@@ -33,6 +33,17 @@ import { Vendor } from "./vendor-ids.ts";
 const JsonObject = z.record(z.string(), z.json());
 
 /**
+ * A sane price: nonnegative, and bounded above the most expensive model ever
+ * listed on models.dev — a lone $600/1M legacy outlier; current flagships top
+ * out around $180/1M — so a unit mix-up (per 1K, per-token, cents) fails
+ * validation instead of silently inflating every estimate.
+ */
+const Price = z
+	.number()
+	.nonnegative()
+	.max(1000, "unrealistically large — prices are USD per 1 MILLION tokens");
+
+/**
  * Which API surface a model is reached through:
  *   - "responses"  -> `provider.responses(modelId)` (OpenAI Responses API)
  *   - "chat"       -> `provider.chat(modelId)`      (Chat Completions)
@@ -69,12 +80,34 @@ export const ModelSettings = z.strictObject({
 export type ModelSettings = z.infer<typeof ModelSettings>;
 
 /**
+ * What one model run costs, in the billing buckets of models.dev
+ * (https://models.dev, the community model database): **USD per 1 million
+ * tokens**, one price per bucket, spelled in this config's own camelCase
+ * (models.dev writes `cache_read`/`cache_write`). `input` prices the
+ * NON-cached input — cache reads and writes are their own buckets — so with
+ * token counts kept in the same four buckets, a run's cost is the plain dot
+ * product: Σ tokens[bucket] × cost[bucket] / 1e6. Every field is optional;
+ * an absent bucket has no price (a fully absent `cost` reads as "unknown or
+ * free" — local models simply omit it).
+ */
+export const ModelCost = z.strictObject({
+	input: Price.optional(),
+	output: Price.optional(),
+	cacheRead: Price.optional(),
+	cacheWrite: Price.optional(),
+});
+export type ModelCost = z.infer<typeof ModelCost>;
+
+/**
  * One model a provider serves.
  *   - `api` picks the call surface (see {@link ModelApi}); omit for the vendor
  *     default. Applies to any provider kind.
  *   - `backend`/`slug` apply to gateway providers (the `gateway.backends` key
  *     that serves it, and the path segment when it differs from `id`).
  *   - `settings` are default call settings, merged over the provider's own.
+ *   - `cost` is the model's price sheet (see {@link ModelCost}); purely
+ *     declarative metadata — the catalog never computes with it, it is read
+ *     back via `meta`/`metaForRole` for the app's own cost accounting.
  * The schema keeps every field optional; {@link Config}'s refinement enforces
  * that the right ones are present for the provider's kind.
  */
@@ -84,6 +117,7 @@ export const Model = z.strictObject({
 	backend: z.string().min(1).optional(), // gateway providers only (backends key)
 	slug: z.string().min(1).optional(), // gateway providers only (path override)
 	settings: ModelSettings.optional(),
+	cost: ModelCost.optional(), // USD per 1M tokens, models.dev vocabulary
 });
 export type Model = z.infer<typeof Model>;
 

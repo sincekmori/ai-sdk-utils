@@ -14,6 +14,7 @@ interface RawModel {
 	backend?: string;
 	slug?: string;
 	settings?: Record<string, unknown>;
+	cost?: Record<string, unknown>;
 }
 interface RawVendor {
 	id?: string;
@@ -95,6 +96,27 @@ describe("config schema", () => {
 	it("allows omitting settings", () => {
 		const parsed = Config.parse(valid);
 		expect(parsed.providers[1]?.models[0]?.settings).toBeUndefined();
+	});
+
+	it("keeps the cost sheet on the model and exposes it via meta", () => {
+		const config = clone(valid);
+		config.providers[0].models[0].cost = { input: 1.25, output: 10, cacheRead: 0.125 };
+		const catalog = createCatalog(config as unknown as Config);
+		expect(catalog.meta.get("openai:gpt-5.6")?.cost).toStrictEqual({
+			input: 1.25,
+			output: 10,
+			cacheRead: 0.125,
+		});
+	});
+
+	it("rejects cost entries that cannot be real prices", () => {
+		const bad = clone(valid);
+		bad.providers[0].models[0].cost = { input: 1.25, prompt: 1.25 }; // not a billing bucket
+		expect(errorOf(bad)).not.toBe("");
+		bad.providers[0].models[0].cost = { output: -1 }; // prices are nonnegative
+		expect(errorOf(bad)).not.toBe("");
+		bad.providers[0].models[0].cost = { output: 1500 }; // a per-1K unit mix-up
+		expect(errorOf(bad)).toContain("USD per 1 MILLION tokens");
 	});
 
 	it("rejects an unknown api value", () => {

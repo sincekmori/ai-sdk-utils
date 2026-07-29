@@ -272,6 +272,33 @@ Here `gpt-5.6` inherits the provider defaults as-is. `gpt-5.6-luna` overrides `t
 
 `metaForRole(role)?.settings` returns the **effective** (merged) settings — exactly what is baked into the handle.
 
+### Model prices (`cost`)
+
+Add a `cost` block to a model to declare its price sheet, in the billing buckets of [models.dev](https://models.dev) (the community model database): **USD per 1 million tokens**, one price per bucket — `input`, `output`, `cacheRead`, `cacheWrite` (spelled in this config's own camelCase; models.dev writes `cache_read`/`cache_write`).
+`input` prices the _non-cached_ input; cache reads and writes are their own buckets.
+A price no real model could have (above $1,000/1M — a per-token or per-1K unit mix-up) fails validation.
+
+```json
+{
+  "providers": [
+    {
+      "id": "anthropic",
+      "models": [
+        {
+          "id": "claude-sonnet-5",
+          "cost": { "input": 3, "output": 15, "cacheRead": 0.3, "cacheWrite": 3.75 }
+        }
+      ]
+    }
+  ]
+}
+```
+
+The catalog never computes with it — it is declarative metadata, read back via `meta` / `metaForRole(role)?.cost` for your own cost accounting.
+Keep your token counts in the same four buckets and a run's cost is the plain dot product: Σ `tokens[bucket] × cost[bucket] / 1e6`.
+Every field is optional, and so is the whole block — local or free models simply omit it.
+Prices come from your config (copy them from models.dev), so they are as current as you keep them.
+
 ### Per-provider overrides (resolvers, fetch)
 
 Most providers need no code: a vendor block (optionally with a `baseURL`, which covers OpenAI-compatible servers like Ollama) or a `gateway` block resolves from config alone.
