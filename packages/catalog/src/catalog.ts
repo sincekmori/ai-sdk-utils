@@ -5,6 +5,7 @@ import type { FetchFunction } from "@ai-sdk/provider-utils";
 import type { LanguageModel } from "ai";
 import * as z from "zod";
 
+import { defaultCostOf } from "./costs.ts";
 import { createDirectRuntime, createGatewayRuntime, type ProviderRuntime } from "./gateway.ts";
 import { parseRoleRef, vendorBlockOf } from "./invariants.ts";
 import { Config, type Model, type ModelKey, type Provider } from "./schema.ts";
@@ -197,6 +198,13 @@ export function createCatalog(config: Config, options: CatalogOptions = {}): Cat
 			const entry: ModelEntry = { ...m, provider: provider.id, key };
 			if (settings) {
 				entry.settings = settings;
+			}
+			if (entry.cost === undefined) {
+				// No cost in the config -> the embedded models.dev sheet, if known.
+				const cost = defaultCostOf(provider, m);
+				if (cost) {
+					entry.cost = cost;
+				}
 			}
 			meta.set(key, entry);
 		}

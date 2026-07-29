@@ -87,8 +87,10 @@ export type ModelSettings = z.infer<typeof ModelSettings>;
  * NON-cached input — cache reads and writes are their own buckets — so with
  * token counts kept in the same four buckets, a run's cost is the plain dot
  * product: Σ tokens[bucket] × cost[bucket] / 1e6. Every field is optional;
- * an absent bucket has no price (a fully absent `cost` reads as "unknown or
- * free" — local models simply omit it).
+ * an absent bucket has no price. A model that omits `cost` entirely gets the
+ * embedded models.dev sheet for its vendor and id when one exists (see
+ * {@link Model}); a `cost` still absent after that reads as "unknown or
+ * free" — local models simply have no sheet.
  */
 export const ModelCost = z.strictObject({
 	input: Price.optional(),
@@ -105,9 +107,11 @@ export type ModelCost = z.infer<typeof ModelCost>;
  *   - `backend`/`slug` apply to gateway providers (the `gateway.backends` key
  *     that serves it, and the path segment when it differs from `id`).
  *   - `settings` are default call settings, merged over the provider's own.
- *   - `cost` is the model's price sheet (see {@link ModelCost}); purely
- *     declarative metadata — the catalog never computes with it, it is read
- *     back via `meta`/`metaForRole` for the app's own cost accounting.
+ *   - `cost` is the model's price sheet (see {@link ModelCost}); declarative
+ *     metadata — the catalog never computes with it, it is read back via
+ *     `meta`/`metaForRole` for the app's own cost accounting. Omitted, it is
+ *     filled from an embedded models.dev snapshot when the model's vendor and
+ *     id are known there; an explicit `cost` always wins.
  * The schema keeps every field optional; {@link Config}'s refinement enforces
  * that the right ones are present for the provider's kind.
  */

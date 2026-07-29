@@ -96,7 +96,7 @@ One JSON file, every kind of provider:
 The `$schema` line is optional — with it, your editor validates and autocompletes the file; `createCatalog` ignores the key. The package ships the schema as [`schema.json`](schema.json), so the `./node_modules/...` pointer above works right after `npm install` and always matches the installed version. Prefer a URL? Any npm CDN serves it, pinned per version:
 
 ```json
-{ "$schema": "https://cdn.jsdelivr.net/npm/ai-sdk-catalog@0.7.0/schema.json" }
+{ "$schema": "https://cdn.jsdelivr.net/npm/ai-sdk-catalog@0.8.0/schema.json" }
 ```
 
 Ready-made configs at three sizes live in [`examples/`](examples/): minimal, standard, and advanced.
@@ -296,8 +296,13 @@ A price no real model could have (above $1,000/1M — a per-token or per-1K unit
 
 The catalog never computes with it — it is declarative metadata, read back via `meta` / `metaForRole(role)?.cost` for your own cost accounting.
 Keep your token counts in the same four buckets and a run's cost is the plain dot product: Σ `tokens[bucket] × cost[bucket] / 1e6`.
-Every field is optional, and so is the whole block — local or free models simply omit it.
-Prices come from your config (copy them from models.dev), so they are as current as you keep them.
+Every field is optional, and so is the whole block.
+
+**Omit `cost` and the catalog fills it in for you** — the package embeds a snapshot of the models.dev price sheets for every bundled vendor, and a model without an explicit `cost` gets the sheet matching its vendor and model id (a direct provider's vendor, or the backend's vendor for a gateway model).
+The match is exact: models.dev spells ids the way each vendor does, so a config using vendor ids matches as-is.
+An explicit `cost` in the config always wins, so write one to pin or correct a price.
+No sheet exists for a resolver provider or the `openai-compatible` vendor (the upstream is unknown), for a model id models.dev does not list, or for local and free models — there `cost` simply stays absent.
+The snapshot is regenerated from [models.dev](https://models.dev) as part of maintaining the package, so its prices are as current as the release you installed; pin prices in the config where exactness matters.
 
 ### Per-provider overrides (resolvers, fetch)
 
