@@ -1,0 +1,76 @@
+name: Refresh model costs
+
+# Weekly refresh of the embedded models.dev price snapshot
+# (packages/catalog/src/costs.gen.ts). Opens a PR when prices changed, with a
+# patch changeset so the next release ships the new sheet. Note: PRs opened
+# with GITHUB_TOKEN don't trigger the CI workflow (same limitation as the
+# changesets Version Packages PR) — CI runs once more on merge to main.
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Mondays 03:00 UTC (12:00 JST)
+  workflow_dispatch:
+
+permissions:
+  contents: write # push the refresh branch
+  pull-requests: write # open the refresh PR
+
+concurrency:
+  group: refresh-costs-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Regenerate the cost snapshot
+        run: pnpm --filter ai-sdk-catalog generate-costs && pnpm format
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- packages/catalog/src/costs.gen.ts; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update the refresh PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="chore/refresh-model-costs"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          # Fixed changeset filename: repeated refreshes before a release fold
+          # into the one pending changeset instead of stacking new ones.
+          cat > .changeset/refresh-model-costs.md <<'EOF'
+          ---
+          "ai-sdk-catalog": patch
+          ---
+
+          chore(catalog): refresh the embedded models.dev cost snapshot
+          EOF
+          git add packages/catalog/src/costs.gen.ts .changeset/refresh-model-costs.md
+          git commit -m "chore(catalog): refresh the embedded models.dev cost snapshot"
+          git push -fu origin "$branch"
+          if [ "$(gh pr list --head "$branch" --state open --json number --jq length)" = "0" ]; then
+            gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "chore(catalog): refresh the embedded models.dev cost snapshot" \
+              --body "Weekly automated refresh of \`packages/catalog/src/costs.gen.ts\` from https://models.dev/api.json. Review the price diff and merge; the included changeset ships it as a patch release."
+          fi
