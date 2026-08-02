@@ -73,11 +73,15 @@
     },
     {
       "files": ["**/examples/**"],
-      "rules": { "eslint/no-console": "off" }
+      "rules": { "eslint/no-console": "off", "node/no-top-level-await": "off" }
     },
     {
       "files": ["**/scripts/**"],
-      "rules": { "eslint/no-console": "off", "import/no-default-export": "off" }
+      "rules": {
+        "eslint/no-console": "off",
+        "import/no-default-export": "off",
+        "node/no-top-level-await": "off"
+      }
     },
     {
       "files": ["packages/catalog/src/vendors.ts"],
