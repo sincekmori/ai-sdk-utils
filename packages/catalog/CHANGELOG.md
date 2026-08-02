@@ -1,5 +1,11 @@
 # ai-sdk-catalog
 
+## 0.10.1
+
+### Patch Changes
+
+- a950d52: chore(catalog): refresh the embedded models.dev cost snapshot
+
 ## 0.10.0
 
 ### Minor Changes
