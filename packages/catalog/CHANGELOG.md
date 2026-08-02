@@ -1,5 +1,11 @@
 # ai-sdk-catalog
 
+## 0.10.0
+
+### Minor Changes
+
+- 6bba0d1: feat(catalog): `requiredRoles` option — declare the roles the app depends on so `createCatalog` fails at startup when the config misses any, and the declared names narrow `modelForRole`/`metaForRole` (typos fail to compile, `metaForRole` loses `undefined`)
+
 ## 0.9.0
 
 ### Minor Changes
