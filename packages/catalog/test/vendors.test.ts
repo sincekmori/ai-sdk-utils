@@ -1,3 +1,6 @@
+// Copyright 2026 Shinsuke Mori
+// SPDX-License-Identifier: Apache-2.0
+
 import type { LanguageModel } from "ai";
 import { describe, expect, it } from "vitest";
 

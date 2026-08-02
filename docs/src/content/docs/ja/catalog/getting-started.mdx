@@ -93,7 +93,16 @@ const { text } = await generateText({
 
 ```ts
 const meta = catalog.metaForRole("chat");
-console.log(meta?.id, meta?.provider, meta?.settings);
+console.log(meta?.id, meta?.provider, meta?.settings, meta?.cost);
+```
+
+アプリが依存するロールは `requiredRoles` で宣言できます。config に欠けていれば最初の参照時では
+なく起動時に失敗します。宣言した名前は型にも反映され、`modelForRole` が補完され、タイポは
+コンパイルエラーになり、`metaForRole` から `undefined` が消えます:
+
+```ts
+const catalog = createCatalog(config, { requiredRoles: ["chat"] });
+console.log(catalog.metaForRole("chat").id); // `?.` は不要
 ```
 
 このパッケージはファイルシステムに一切触れません — `createCatalog` はプレーンなオブジェクトを

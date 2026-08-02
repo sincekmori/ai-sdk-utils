@@ -14,7 +14,10 @@ import { Config, createCatalog } from "../src/index.ts";
 // directory has three sizes: minimal / standard / advanced.
 const configText = await readFile("./examples/ai-sdk-catalog.advanced.json", "utf8");
 const raw: unknown = JSON.parse(configText);
-const catalog = createCatalog(raw as Config);
+// requiredRoles declares the roles this app depends on: a missing assignment
+// fails here at startup, and the names are typed — modelForRole autocompletes
+// them and metaForRole's result loses `undefined`.
+const catalog = createCatalog(raw as Config, { requiredRoles: ["chat", "search"] });
 
 const { text } = await generateText({
 	model: catalog.modelForRole("chat"), // -> @ai-sdk/anthropic, called directly
@@ -25,9 +28,10 @@ const { text } = await generateText({
 
 console.log(text);
 
-const chatMeta = catalog.metaForRole("chat");
-console.log("model id:", chatMeta?.id);
-console.log("settings:", chatMeta?.settings);
+const chatMeta = catalog.metaForRole("chat"); // non-optional: "chat" is declared above
+console.log("model id:", chatMeta.id);
+console.log("settings:", chatMeta.settings);
+console.log("cost:", chatMeta.cost); // auto-filled from the embedded models.dev snapshot
 
 // The gateway role resolves to your own gateway, no extra wiring.
 await generateText({ model: catalog.modelForRole("search"), prompt: "What changed recently?" });

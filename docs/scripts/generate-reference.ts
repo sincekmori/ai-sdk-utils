@@ -102,26 +102,18 @@ function typeLabel(rawNode: SchemaNode, locale: Locale): string {
 	return node.type ?? "unknown";
 }
 
-/** Lookup keys for a field path, from most to least specific. */
-function candidateKeys(path: string): string[] {
-	const keys = [path];
-	const providerSettings = path.replace("providers[].models[].settings.", "providers[].settings.");
-	if (providerSettings !== path) {
-		keys.push(providerSettings);
-	}
-	return keys;
-}
+/**
+ * Field paths with no description in any locale map — fails the build at the
+ * end. The root section ("") is exempt by design: the page intro covers it.
+ */
+const missingDescriptions = new Set<string>();
 
 function descriptionFor(path: string, locale: Locale): string {
-	for (const map of locale.descriptions) {
-		for (const key of candidateKeys(path)) {
-			const text = map[key];
-			if (text !== undefined) {
-				return text;
-			}
-		}
+	const map = locale.descriptions.find((m) => m[path] !== undefined);
+	if (map === undefined && path !== "") {
+		missingDescriptions.add(path);
 	}
-	return "";
+	return map?.[path] ?? "";
 }
 
 // ---------------------------------------------------------------------------
@@ -229,6 +221,8 @@ function renderPage(locale: Locale): string {
 		"---",
 		`title: ${locale.title}`,
 		`description: ${locale.pageDescription}`,
+		// The source .mdx is gitignored, so Starlight's edit link would 404.
+		"editUrl: false",
 		"---",
 		"",
 		"{/* GENERATED FILE - DO NOT EDIT. Run `pnpm --filter docs generate-reference`. */}",
@@ -297,3 +291,10 @@ await Promise.all(
 		console.log(`wrote ${locale.outFile}`);
 	}),
 );
+
+// Fail loudly so a new schema field cannot land undocumented.
+if (missingDescriptions.size > 0) {
+	throw new Error(
+		`descriptions.en.json is missing entries for: ${[...missingDescriptions].toSorted().join(", ")}`,
+	);
+}

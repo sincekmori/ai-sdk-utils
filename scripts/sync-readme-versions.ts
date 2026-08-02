@@ -35,7 +35,7 @@ async function syncPackage(dir: string): Promise<void> {
 	}
 	// "/npm/<name>@1.2.3" with an optional prerelease/build suffix.
 	const pin = new RegExp(
-		String.raw`(/npm/${escapeRegExp(pkg.name)}@)\d+\.\d+\.\d+(?:[+-][\w.-]+)?`,
+		String.raw`(/npm/${escapeRegExp(pkg.name)}@)\d+\.\d+\.\d+(?:[-+][\w.+-]+)?`,
 		"gu",
 	);
 	const synced = readme.replaceAll(pin, `$1${pkg.version}`);

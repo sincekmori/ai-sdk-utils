@@ -92,7 +92,16 @@ Model metadata travels with the role:
 
 ```ts
 const meta = catalog.metaForRole("chat");
-console.log(meta?.id, meta?.provider, meta?.settings);
+console.log(meta?.id, meta?.provider, meta?.settings, meta?.cost);
+```
+
+Declare the roles your app depends on with `requiredRoles`, and a missing assignment fails at
+startup instead of at the first lookup. The declared names are typed, too: `modelForRole`
+autocompletes them, a typo fails to compile, and `metaForRole` loses its `undefined`:
+
+```ts
+const catalog = createCatalog(config, { requiredRoles: ["chat"] });
+console.log(catalog.metaForRole("chat").id); // no `?.` needed
 ```
 
 The package never touches the filesystem — `createCatalog` takes a plain object, so it works the

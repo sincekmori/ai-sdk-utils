@@ -41,7 +41,7 @@ const { text } = await generateText({
 
 // Model metadata travels with the role.
 const meta = catalog.metaForRole("chat");
-console.log(meta?.id, meta?.provider, meta?.settings);
+console.log(meta?.id, meta?.provider, meta?.settings, meta?.cost);
 ```
 
 ### Config file
@@ -274,9 +274,12 @@ Here `gpt-5.6` inherits the provider defaults as-is. `gpt-5.6-luna` overrides `t
 
 ### Model prices (`cost`)
 
-Add a `cost` block to a model to declare its price sheet, in the billing buckets of [models.dev](https://models.dev) (the community model database): **USD per 1 million tokens**, one price per bucket — `input`, `output`, `cacheRead`, `cacheWrite` (spelled in this config's own camelCase; models.dev writes `cache_read`/`cache_write`).
+Every model's metadata carries a price sheet, in the billing buckets of [models.dev](https://models.dev) (the community model database): **USD per 1 million tokens**, one price per bucket — `input`, `output`, `cacheRead`, `cacheWrite` (spelled in this config's own camelCase; models.dev writes `cache_read`/`cache_write`).
 `input` prices the _non-cached_ input; cache reads and writes are their own buckets.
-A price no real model could have (above $1,000/1M — a per-token or per-1K unit mix-up) fails validation.
+
+**You rarely write it.** The package embeds a snapshot of the models.dev price sheets for every bundled vendor, and a model without an explicit `cost` gets the sheet matching its vendor and model id (a direct provider's vendor, or the backend's vendor for a gateway model).
+The match is exact: models.dev spells ids the way each vendor does, so a config using vendor ids matches as-is.
+Write a `cost` block only to pin or correct a price — an explicit value always wins:
 
 ```json
 {
@@ -286,7 +289,7 @@ A price no real model could have (above $1,000/1M — a per-token or per-1K unit
       "models": [
         {
           "id": "claude-sonnet-5",
-          "cost": { "input": 3, "output": 15, "cacheRead": 0.3, "cacheWrite": 3.75 }
+          "cost": { "input": 2, "output": 10, "cacheRead": 0.2, "cacheWrite": 2.5 }
         }
       ]
     }
@@ -294,15 +297,26 @@ A price no real model could have (above $1,000/1M — a per-token or per-1K unit
 }
 ```
 
+Every field is optional, and a price no real model could have (above $1,000/1M — a per-token or per-1K unit mix-up) fails validation.
 The catalog never computes with it — it is declarative metadata, read back via `meta` / `metaForRole(role)?.cost` for your own cost accounting.
 Keep your token counts in the same four buckets and a run's cost is the plain dot product: Σ `tokens[bucket] × cost[bucket] / 1e6`.
-Every field is optional, and so is the whole block.
-
-**Omit `cost` and the catalog fills it in for you** — the package embeds a snapshot of the models.dev price sheets for every bundled vendor, and a model without an explicit `cost` gets the sheet matching its vendor and model id (a direct provider's vendor, or the backend's vendor for a gateway model).
-The match is exact: models.dev spells ids the way each vendor does, so a config using vendor ids matches as-is.
-An explicit `cost` in the config always wins, so write one to pin or correct a price.
 No sheet exists for a resolver provider or the `openai-compatible` vendor (the upstream is unknown), for a model id models.dev does not list, or for local and free models — there `cost` simply stays absent.
 The snapshot is regenerated from [models.dev](https://models.dev) as part of maintaining the package, so its prices are as current as the release you installed; pin prices in the config where exactness matters.
+
+### Required roles
+
+Declare the roles your app depends on, and `createCatalog` fails at startup when the config misses any of them — instead of at the first lookup deep inside the app:
+
+```ts
+const catalog = createCatalog(config, { requiredRoles: ["default", "fast"] });
+
+catalog.modelForRole("default"); // role names are typed now — a typo fails to compile
+const meta = catalog.metaForRole("fast"); // ModelEntry, no `undefined` to narrow away
+```
+
+The declared names flow into the catalog's type: `modelForRole` / `metaForRole` accept exactly those roles (with editor autocompletion), and `metaForRole` drops `undefined` from its result.
+Declare every role your app calls — the config may define more (for other consumers of the same file), but this catalog instance only types the declared ones.
+Nothing changes without the option: any role name is accepted at the type level, and unknown ones throw (or return `undefined`) at call time.
 
 ### Per-provider overrides (resolvers, fetch)
 

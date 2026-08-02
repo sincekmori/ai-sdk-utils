@@ -1,3 +1,6 @@
+// Copyright 2026 Shinsuke Mori
+// SPDX-License-Identifier: Apache-2.0
+
 import { readFile } from "node:fs/promises";
 
 import { describe, expect, it } from "vitest";
@@ -6,8 +9,7 @@ import buildConfigJsonSchema from "../scripts/generate-schema.ts";
 import { createCatalog } from "../src/catalog.ts";
 import { Config } from "../src/schema.ts";
 
-// Loosely typed shapes so negative tests can mutate freely and indexing never
-// produces cross-shape unions. The real validation happens in createCatalog.
+// Loose shapes so negative tests can mutate freely; createCatalog validates.
 interface RawModel {
 	id: string;
 	api?: string;
@@ -41,8 +43,7 @@ interface RawConfig {
 	roles: Record<string, string | { provider: string; model: string }>;
 }
 
-// A minimal, fully valid config reused across tests: one plain provider and one
-// gateway provider.
+// A minimal, fully valid config reused across tests: plain + gateway provider.
 const valid: RawConfig = {
 	providers: [
 		{
@@ -290,10 +291,8 @@ describe("shipped examples and schema.json", () => {
 	});
 
 	it("keeps the shipped schema.json in sync with the Zod schema", async () => {
-		// schema.json is committed (and published) so `$schema` pointers resolve;
-		// this guards it against drifting from src/schema.ts. Regenerate with
-		// `pnpm generate-schema && pnpm format` — formatting-only differences
-		// don't matter here because both sides are compared parsed.
+		// Guards the committed (and published) schema.json against drifting from
+		// src/schema.ts; regenerate with `pnpm generate-schema && pnpm format`.
 		const committed: unknown = JSON.parse(await readFile("./schema.json", "utf8"));
 		expect(committed).toStrictEqual(buildConfigJsonSchema());
 	});
