@@ -8,8 +8,9 @@ import * as z from "zod";
 import { defaultCostOf } from "./costs.ts";
 import { createDirectRuntime, createGatewayRuntime, type ProviderRuntime } from "./gateway.ts";
 import { parseRoleRef, vendorBlockOf } from "./invariants.ts";
-import { Config, type Model, type ModelKey, type Provider } from "./schema.ts";
+import { Config, type ModelKey, type Provider } from "./schema.ts";
 import { mergeSettings, withSettings } from "./settings.ts";
+import type { Catalog, CatalogOptions, ModelEntry, ProviderOverride, RoleEntry } from "./types.ts";
 import { isVendor } from "./vendors.ts";
 
 /**
@@ -68,110 +69,23 @@ function createProviderRuntime(
 }
 
 /**
- * A model's config entry, plus its provider and stable `provider:model` key.
- * `settings` here is the *effective* value — the provider's defaults merged
- * with the model's own settings — which is exactly what is baked into the handle.
- */
-export interface ModelEntry extends Model {
-	provider: string;
-	key: ModelKey;
-}
-
-/**
- * Resolves a model to a runtime handle, for a provider that is neither a
- * built-in vendor nor a `gateway` block — for example Amazon Bedrock, Google
- * Vertex, or Azure, whose auth doesn't fit a bearer token. Receives the full
- * {@link ModelEntry}, so it can pick the call surface from `api` and read any
- * other model metadata it needs.
- */
-export type ProviderResolver = (model: ModelEntry) => LanguageModel;
-
-/**
- * Per-provider runtime overrides, keyed by provider id in
- * {@link CatalogOptions.providers}.
- */
-export interface ProviderOverride {
-	/**
-	 * Resolves this provider's models in code, replacing the config-driven
-	 * runtime entirely. An override always wins, so it can stand in for a
-	 * built-in vendor or a gateway provider too. Required for a provider whose
-	 * vendor is not built in and which has no `gateway` block. When set,
-	 * `fetch` is ignored — the resolver owns its transport.
-	 */
-	resolve?: ProviderResolver;
-	/**
-	 * Base fetch for this provider only, taking precedence over the global
-	 * {@link CatalogOptions.fetch} — e.g. to inject a short-lived OAuth token
-	 * for one gateway without affecting the others.
-	 */
-	fetch?: FetchFunction;
-}
-
-/** Options for {@link createCatalog}. */
-export interface CatalogOptions {
-	/** Per-provider runtime overrides, keyed by provider id. */
-	providers?: Record<string, ProviderOverride>;
-	/**
-	 * Base fetch every provider's HTTP requests are sent through (default:
-	 * `globalThis.fetch`). For gateway providers it runs *after* the gateway
-	 * path rewriting, so it sees the final gateway URL and body — the place to
-	 * add logging, auth, or a gateway-specific payload adjustment without
-	 * patching `globalThis.fetch`. A per-provider `fetch` override wins;
-	 * resolver-backed providers are not affected (their resolver builds its
-	 * own models).
-	 */
-	fetch?: FetchFunction;
-}
-
-/** A role resolved to a model key plus the model's metadata. */
-export interface RoleEntry {
-	key: ModelKey;
-	meta: ModelEntry;
-}
-
-/**
- * The catalog built from a {@link Config}: a metadata index, role lookups, and
- * lazily-resolved model handles. The single source of truth is the config; each
- * provider decides how its models become real handles (a direct `@ai-sdk/*`
- * vendor, your own gateway, or a `resolve` override).
- */
-export interface Catalog {
-	/** Metadata for every model, keyed by `provider:model`. */
-	meta: Map<ModelKey, ModelEntry>;
-	/** Role name -> key + metadata. */
-	roles: Record<string, RoleEntry>;
-	/** Model handle by explicit address, e.g. `model("anthropic:claude-sonnet-5")`. */
-	model(key: ModelKey): LanguageModel;
-	/** Model handle for a role, e.g. `modelForRole("chat")` -> pass to generateText. */
-	modelForRole(role: string): LanguageModel;
-	/** Metadata for a role (id, settings, provider, key, ...). */
-	metaForRole(role: string): ModelEntry | undefined;
-	/**
-	 * The underlying AI SDK provider instance backing a model, for provider-native
-	 * features — tools, embeddings, image models, typed provider metadata. For a
-	 * gateway provider this is the sub-provider for the model's backend (e.g. the
-	 * Google instance behind a Gemini model, exposing `tools.enterpriseWebSearch`).
-	 * Pass the vendor's provider type as `P`. Returns undefined for a
-	 * resolver-backed provider (no instance) or an unknown key.
-	 */
-	// eslint-disable-next-line typescript/no-unnecessary-type-parameters -- P is a caller-supplied cast target
-	provider<P = unknown>(key: ModelKey): P | undefined;
-}
-
-/**
  * Builds a {@link Catalog} from a config.
  *
  * The config is validated here at runtime — the `Config` parameter type is for
  * editor completion when authoring configs in code, but data parsed from JSON
  * passes straight in and gets the same checks. Invalid input throws a readable
- * error listing every issue with its path.
+ * error listing every issue with its path. Roles the app depends on can be
+ * declared via {@link CatalogOptions.requiredRoles}; they are verified here too.
  *
  * Metadata is indexed eagerly; model handles are resolved on first access and
  * memoized. Resolution is lazy so a provider's API key is only needed when one
  * of its models is actually used — listing a provider you never call costs
  * nothing, and building the catalog never reads a key or hits the network.
  */
-export function createCatalog(config: Config, options: CatalogOptions = {}): Catalog {
+export function createCatalog<const Role extends string = string>(
+	config: Config,
+	options: CatalogOptions<Role> = {},
+): Catalog<Role> {
 	const parsed = Config.safeParse(config);
 	if (!parsed.success) {
 		// ZodError#message is a raw JSON dump; prettifyError renders each issue
@@ -253,6 +167,13 @@ export function createCatalog(config: Config, options: CatalogOptions = {}): Cat
 		roles[role] = { key, meta: entry };
 	}
 
+	const missing = (options.requiredRoles ?? []).filter((role) => roles[role] === undefined);
+	if (missing.length > 0) {
+		throw new Error(
+			`Config roles are missing ${missing.map((role) => `"${role}"`).join(", ")} required by createCatalog's "requiredRoles".`,
+		);
+	}
+
 	return {
 		meta,
 		roles,
@@ -265,6 +186,8 @@ export function createCatalog(config: Config, options: CatalogOptions = {}): Cat
 			return model(entry.key);
 		},
 		metaForRole(role) {
+			// RoleMeta's non-undefined branch is sound: `requiredRoles` presence
+			// was verified right after the roles were built.
 			return roles[role]?.meta;
 		},
 		provider: providerInstance,

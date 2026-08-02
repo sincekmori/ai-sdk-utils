@@ -1,8 +1,12 @@
+// Copyright 2026 Shinsuke Mori
+// SPDX-License-Identifier: Apache-2.0
+
 import type { LanguageModel } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
-import { createCatalog, type ModelEntry, type ProviderOverride } from "../src/catalog.ts";
+import { createCatalog } from "../src/catalog.ts";
 import { Config } from "../src/schema.ts";
+import type { ModelEntry, ProviderOverride } from "../src/types.ts";
 
 // Behavioral config: every provider is backed by a resolve override, so the
 // catalog never touches a real SDK or the network for these tests.
@@ -211,6 +215,38 @@ describe("createCatalog", () => {
 		});
 		expect(catalog.metaForRole("chat")?.id).toBe("gpt-5.6");
 		expect(() => createCatalog({ providers: [], roles: {} })).toThrow(/✖/u);
+	});
+});
+
+describe("requiredRoles", () => {
+	it("throws at startup listing every missing required role", () => {
+		expect(() =>
+			createCatalog(config, {
+				providers: fakeOverrides(),
+				requiredRoles: ["chat", "default", "fallback"],
+			}),
+		).toThrow(/"default", "fallback"/u);
+	});
+
+	it("builds when every required role is assigned, with role names narrowed", () => {
+		const catalog = createCatalog(config, {
+			providers: fakeOverrides(),
+			requiredRoles: ["chat", "local"],
+		});
+		// metaForRole drops `undefined` for declared roles: no `?.` needed here.
+		expect(catalog.metaForRole("chat").key).toBe("anthropic:claude-sonnet-5");
+		expect(catalog.roles.local.key).toBe("ollama:qwen3.6:35b");
+		const model = catalog.modelForRole("local") as unknown as { modelId: string };
+		expect(model.modelId).toBe("qwen3.6:35b");
+	});
+
+	it("rejects undeclared role names at compile time, still throwing at runtime", () => {
+		const catalog = createCatalog(config, {
+			providers: fakeOverrides(),
+			requiredRoles: ["chat"],
+		});
+		// @ts-expect-error -- a typo is not a declared role
+		expect(() => catalog.modelForRole("chatt")).toThrow(/Unknown role/u);
 	});
 });
 

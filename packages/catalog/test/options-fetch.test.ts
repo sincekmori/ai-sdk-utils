@@ -3,8 +3,9 @@
 
 import { describe, expect, it } from "vitest";
 
-import { type Catalog, createCatalog } from "../src/catalog.ts";
+import { createCatalog } from "../src/catalog.ts";
 import { Config } from "../src/schema.ts";
+import type { Catalog } from "../src/types.ts";
 
 const gatewayConfig = Config.parse({
 	providers: [

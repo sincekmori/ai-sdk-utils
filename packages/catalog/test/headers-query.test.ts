@@ -3,8 +3,9 @@
 
 import { describe, expect, it } from "vitest";
 
-import { type Catalog, createCatalog } from "../src/catalog.ts";
+import { createCatalog } from "../src/catalog.ts";
 import { Config } from "../src/schema.ts";
+import type { Catalog } from "../src/types.ts";
 
 // Records the URL and headers of every request; replies with a canned 500 that
 // ends the call — we only care about what would have hit the wire.

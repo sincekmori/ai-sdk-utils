@@ -1,6 +1,7 @@
 export * from "./schema.ts";
 export * from "./backends.ts";
 export * from "./catalog.ts";
+export type * from "./types.ts";
 export {
 	API_KEY_PLACEHOLDER,
 	ApiKey,
