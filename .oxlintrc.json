@@ -51,6 +51,7 @@
     "eslint/func-style": "off",
     "unicorn/import-style": "off",
     "vitest/prefer-to-be-truthy": "off",
+    "vitest/prefer-to-be-falsy": "off",
     "eslint/max-lines-per-function": "off",
     "eslint/max-statements": "off",
     "typescript/method-signature-style": "off",

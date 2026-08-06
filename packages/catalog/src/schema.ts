@@ -137,6 +137,11 @@ export const VendorBlock = z.strictObject({
 	baseURL: z.string().min(1).optional(), // custom endpoint (proxy, Ollama, ...)
 	apiKey: ApiKey.optional(), // literal or { envVarName }; omit for the SDK default
 	name: z.string().min(1).optional(), // openai-compatible metadata namespace
+	// openai-compatible only: the server supports JSON-schema structured outputs.
+	supportsStructuredOutputs: z.boolean().optional(),
+	// openai-compatible only: ask for usage in streaming responses
+	// (`stream_options: { include_usage: true }`).
+	includeUsage: z.boolean().optional(),
 	// Extra headers sent with every request (merged over the vendor SDK's own,
 	// same-name wins). An inline value may embed the key via "{apiKey}".
 	headers: RequestHeaders.optional(),

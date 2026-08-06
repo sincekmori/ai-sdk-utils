@@ -43,6 +43,10 @@ export interface VendorOptions {
 	headers?: Record<string, string>;
 	/** Metadata namespace for `openai-compatible` (defaults to the vendor name). */
 	name?: string;
+	/** `openai-compatible` only: the server supports JSON-schema structured outputs. */
+	supportsStructuredOutputs?: boolean;
+	/** `openai-compatible` only: ask for usage in streaming responses. */
+	includeUsage?: boolean;
 }
 
 /** True when `value` names a bundled vendor. */
@@ -56,7 +60,8 @@ export function isVendor(value: string): value is Vendor {
  * `baseURL` plus a request-rewriting `fetch`).
  */
 export function createVendor(vendor: Vendor, options: VendorOptions): VendorProvider {
-	const { apiKey, baseURL, fetch, headers, name } = options;
+	const { apiKey, baseURL, fetch, headers, name, supportsStructuredOutputs, includeUsage } =
+		options;
 	switch (vendor) {
 		case "anthropic": {
 			return createAnthropic({ apiKey, baseURL, fetch, headers });
@@ -71,6 +76,8 @@ export function createVendor(vendor: Vendor, options: VendorOptions): VendorProv
 				apiKey,
 				fetch,
 				headers,
+				supportsStructuredOutputs,
+				includeUsage,
 			});
 		}
 		case "mistral": {

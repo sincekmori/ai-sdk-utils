@@ -46,6 +46,12 @@ export const GatewayBackend = z
 		// openai-compatible only: provider name used for metadata namespacing.
 		// Defaults to "openai-compatible".
 		name: z.string().min(1).optional(),
+		// openai-compatible only: the upstream supports JSON-schema structured
+		// outputs.
+		supportsStructuredOutputs: z.boolean().optional(),
+		// openai-compatible only: ask for usage in streaming responses
+		// (`stream_options: { include_usage: true }`).
+		includeUsage: z.boolean().optional(),
 		// Extra headers / query params for this backend only, merged over the
 		// gateway-level ones (backend wins per name).
 		headers: RequestHeaders.optional(),
@@ -70,13 +76,15 @@ export const GatewayBackend = z
 				input: backend.actionMap,
 			});
 		}
-		if (backend.name !== undefined && backend.vendor !== "openai-compatible") {
-			ctx.addIssue({
-				code: "custom",
-				message: '"name" applies only to an "openai-compatible" backend',
-				path: ["name"],
-				input: backend.name,
-			});
+		for (const field of ["name", "supportsStructuredOutputs", "includeUsage"] as const) {
+			if (backend[field] !== undefined && backend.vendor !== "openai-compatible") {
+				ctx.addIssue({
+					code: "custom",
+					message: `"${field}" applies only to an "openai-compatible" backend`,
+					path: [field],
+					input: backend[field],
+				});
+			}
 		}
 	});
 export type GatewayBackend = z.infer<typeof GatewayBackend>;

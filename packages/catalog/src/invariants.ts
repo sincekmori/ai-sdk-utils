@@ -68,7 +68,8 @@ export function checkProviderFields(p: Provider, i: number, ctx: Ctx): void {
 		return;
 	}
 	const block = vendorBlockOf(p);
-	if ((block?.id ?? p.id) === "openai-compatible" && block?.baseURL === undefined) {
+	const vendorId = block?.id ?? p.id;
+	if (vendorId === "openai-compatible" && block?.baseURL === undefined) {
 		// The OpenAI-compatible vendor has no canonical endpoint.
 		ctx.addIssue({
 			code: "custom",
@@ -76,6 +77,20 @@ export function checkProviderFields(p: Provider, i: number, ctx: Ctx): void {
 			path: ["providers", i, "vendor"],
 			input: p.vendor,
 		});
+	}
+	if (vendorId !== "openai-compatible" && block !== undefined) {
+		// These map to `createOpenAICompatible` options; any other vendor SDK
+		// would silently ignore them, so reject them instead.
+		for (const field of ["name", "supportsStructuredOutputs", "includeUsage"] as const) {
+			if (block[field] !== undefined) {
+				ctx.addIssue({
+					code: "custom",
+					message: `Provider "${p.id}" sets "vendor.${field}", which applies only to the "openai-compatible" vendor.`,
+					path: ["providers", i, "vendor", field],
+					input: block[field],
+				});
+			}
+		}
 	}
 	if (
 		block?.headers !== undefined &&

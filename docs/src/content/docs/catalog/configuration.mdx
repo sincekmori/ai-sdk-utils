@@ -59,14 +59,17 @@ Several direct vendors, inherited default call settings, and a local OpenAI-comp
 
 ## Advanced
 
-Everything above plus an `openai-compatible` vendor (Fireworks), your own gateway with multiple
-backends, `actionMap` and `slug` overrides, and per-model `providerOptions` merging.
+Everything above plus an `openai-compatible` vendor (Fireworks, with `supportsStructuredOutputs`),
+your own gateway with multiple backends, `actionMap` and `slug` overrides, and per-model
+`providerOptions` merging.
 
 <Code code={withUserSchemaPath(advanced)} lang="json" title="ai-sdk-catalog.advanced.json" />
 
 - `fireworks` uses the `openai-compatible` vendor, which has no canonical endpoint — so its
   `vendor` block sets a `baseURL`, plus the key (`apiKey` is a literal string or
-  `{ "envVarName": "..." }`) and `name` for the metadata namespace.
+  `{ "envVarName": "..." }`) and `name` for the metadata namespace. It also declares
+  `supportsStructuredOutputs`; together with `includeUsage` (usage in streaming responses) these
+  flags exist only on this vendor and fail validation elsewhere.
 - `acme` is a **gateway provider**: the `gateway` block describes the gateway's topology (omit
   `apiKey` to read `AI_GATEWAY_API_KEY`). `backends` is a map under keys of your choice, each
   naming the `vendor` it speaks — so the same vendor can appear twice (here `claude-eu` and

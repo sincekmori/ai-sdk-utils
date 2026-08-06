@@ -124,7 +124,10 @@ The block's fields (all optional):
 - `baseURL` — a custom endpoint (e.g. a proxy).
 - `apiKey` — the key: a literal string, or `{ "envVarName": "..." }` to read an env var. Omit to use the vendor SDK's own default (e.g. `OPENAI_API_KEY`).
 - `name` — metadata namespace for `openai-compatible`.
+- `supportsStructuredOutputs` / `includeUsage` — `openai-compatible` only: declare that the server supports JSON-schema structured outputs, and ask for usage in streaming responses (`stream_options: { include_usage: true }`).
 - `headers` / `query` — extra request headers and URL query parameters (see [Extra headers and query parameters](#extra-headers-and-query-parameters)).
+
+The `openai-compatible`-only fields (`name`, `supportsStructuredOutputs`, `includeUsage`) fail validation on any other vendor — they would be silently ignored otherwise.
 
 A model's `api` picks the call surface — `responses`, `chat`, or `completion`.
 Omit it for the vendor's default: **OpenAI defaults to the Responses API**, an OpenAI-compatible server to Chat Completions, and every other vendor to its single surface.
@@ -157,6 +160,7 @@ An OpenAI-compatible server defaults to Chat Completions, so the model's `api` c
 
 Add a `gateway` block to route a provider through a single gateway endpoint, each model to the right upstream backend.
 `backends` is a map under keys of your choice; each entry names the `vendor` it speaks, so the same vendor can appear more than once (two regions, two api-versions), and each model picks its backend by key.
+An `openai-compatible` backend also accepts `name`, `supportsStructuredOutputs`, and `includeUsage`, with the same meaning as in a direct vendor block (and the same rule: rejected on other vendors).
 `{slug}` is the model's `slug` (falling back to its `id`); every vendor except `google` carries the model in the request body, so the path is fixed per backend and the slug is substituted at request time.
 For `google` the model is in the URL, which is rewritten to your layout — including the streaming/non-streaming action switch via `actionMap`.
 Regions and versions are just text in `baseURL` or a `pathTemplate`.

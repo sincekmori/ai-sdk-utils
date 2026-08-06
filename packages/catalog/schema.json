@@ -77,6 +77,12 @@
                     "type": "string",
                     "minLength": 1
                   },
+                  "supportsStructuredOutputs": {
+                    "type": "boolean"
+                  },
+                  "includeUsage": {
+                    "type": "boolean"
+                  },
                   "headers": {
                     "type": "object",
                     "propertyNames": {
@@ -220,6 +226,12 @@
                     "name": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "supportsStructuredOutputs": {
+                      "type": "boolean"
+                    },
+                    "includeUsage": {
+                      "type": "boolean"
                     },
                     "headers": {
                       "type": "object",

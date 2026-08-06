@@ -120,6 +120,8 @@ export function createGatewayRuntime(
 						headers,
 						fetch: createBodyModelFetch(slugFor, backendFetch),
 						name: cfg.name,
+						supportsStructuredOutputs: cfg.supportsStructuredOutputs,
+						includeUsage: cfg.includeUsage,
 					});
 		cache.set(backendKey, created);
 		return created;
@@ -157,6 +159,8 @@ export function createDirectRuntime(
 		name?: string;
 		headers?: RequestHeaders;
 		query?: QueryParams;
+		supportsStructuredOutputs?: boolean;
+		includeUsage?: boolean;
 	},
 	baseFetch?: FetchFunction,
 ): ProviderRuntime {
@@ -177,6 +181,8 @@ export function createDirectRuntime(
 						: baseFetch,
 				headers,
 				name: options.name,
+				supportsStructuredOutputs: options.supportsStructuredOutputs,
+				includeUsage: options.includeUsage,
 			});
 		}
 		return provider;

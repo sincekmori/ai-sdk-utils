@@ -62,14 +62,18 @@ export const withUserSchemaPath = (raw) =>
 
 ## Advanced
 
-上記すべてに加えて、`openai-compatible` ベンダ(Fireworks)、複数バックエンドを持つ自前の
-ゲートウェイ、`actionMap` と `slug` の上書き、モデル単位の `providerOptions` のマージ。
+上記すべてに加えて、`openai-compatible` ベンダ(Fireworks、`supportsStructuredOutputs` 付き)、
+複数バックエンドを持つ自前のゲートウェイ、`actionMap` と `slug` の上書き、モデル単位の
+`providerOptions` のマージ。
 
 <Code code={withUserSchemaPath(advanced)} lang="json" title="ai-sdk-catalog.advanced.json" />
 
 - `fireworks` は `openai-compatible` ベンダを使います。このベンダには標準のエンドポイントが
   存在しないため、`vendor` ブロックで `baseURL` を設定し、キー(`apiKey` はリテラル文字列か
-  `{ "envVarName": "..." }`)とメタデータ名前空間の `name` も指定しています。
+  `{ "envVarName": "..." }`)とメタデータ名前空間の `name` も指定しています。さらに
+  `supportsStructuredOutputs` を宣言しています。ストリーミング応答で usage を要求する
+  `includeUsage` と合わせて、この 2 つのフラグはこのベンダ専用で、他のベンダに書くと検証エラーに
+  なります。
 - `acme` は**ゲートウェイプロバイダ**です: `gateway` ブロックがゲートウェイの構成を記述します
   (`apiKey` を省略すると `AI_GATEWAY_API_KEY` を読み取ります)。`backends` は自由に選べるキーの
   マップで、各エントリが話す `vendor` を指名します — 同じベンダを複数並べられます(この例では

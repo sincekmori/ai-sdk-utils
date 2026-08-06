@@ -63,6 +63,8 @@ function createProviderRuntime(
 			name: block?.name,
 			headers: block?.headers,
 			query: block?.query,
+			supportsStructuredOutputs: block?.supportsStructuredOutputs,
+			includeUsage: block?.includeUsage,
 		},
 		baseFetch,
 	);
