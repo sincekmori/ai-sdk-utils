@@ -1,5 +1,11 @@
 # ai-sdk-catalog
 
+## 0.11.0
+
+### Minor Changes
+
+- 78c83ef: feat(catalog): `openai-compatible` vendor blocks and gateway backends accept `supportsStructuredOutputs` and `includeUsage` from the config; the `openai-compatible`-only fields (these two and `name`) now fail validation when written on any other vendor
+
 ## 0.10.1
 
 ### Patch Changes
