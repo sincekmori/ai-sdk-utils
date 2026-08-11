@@ -1,5 +1,11 @@
 # ai-sdk-catalog
 
+## 0.11.1
+
+### Patch Changes
+
+- 04210da: chore(catalog): refresh the embedded models.dev cost snapshot
+
 ## 0.11.0
 
 ### Minor Changes
