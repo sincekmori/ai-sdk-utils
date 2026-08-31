@@ -60,9 +60,9 @@ export const modelCosts: VendorCosts = {
 		"gpt-5.4-pro": { input: 30, output: 180 },
 		"gpt-5.5": { input: 5, output: 30, cacheRead: 0.5 },
 		"gpt-5.5-pro": { input: 30, output: 180 },
-		"gpt-5.6": { input: 5, output: 30, cacheRead: 0.5, cacheWrite: 6.25 },
+		"gpt-5.6": { input: 4, output: 20, cacheRead: 0.4, cacheWrite: 5 },
 		"gpt-5.6-luna": { input: 0.2, output: 1.2, cacheRead: 0.02, cacheWrite: 0.25 },
-		"gpt-5.6-sol": { input: 5, output: 30, cacheRead: 0.5, cacheWrite: 6.25 },
+		"gpt-5.6-sol": { input: 4, output: 20, cacheRead: 0.4, cacheWrite: 5 },
 		"gpt-5.6-terra": { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 2.5 },
 		"gpt-realtime-2.1": { input: 4, output: 24, cacheRead: 0.4 },
 		o1: { input: 15, output: 60, cacheRead: 7.5 },
@@ -107,6 +107,7 @@ export const modelCosts: VendorCosts = {
 		"pixtral-12b": { input: 0.15, output: 0.15 },
 		"pixtral-large-latest": { input: 2, output: 6 },
 		"voxtral-small-latest": { input: 0.1, output: 0.3 },
+		"zai-glm-5-2": { input: 1.4, output: 4.4, cacheRead: 0.14 },
 	},
 	cohere: {
 		"command-a-03-2025": { input: 2.5, output: 10 },
@@ -141,8 +142,6 @@ export const modelCosts: VendorCosts = {
 		"grok-build-0.1": { input: 1, output: 2, cacheRead: 0.2 },
 	},
 	deepseek: {
-		"deepseek-chat": { input: 0.14, output: 0.28, cacheRead: 0.0028 },
-		"deepseek-reasoner": { input: 0.14, output: 0.28, cacheRead: 0.0028 },
 		"deepseek-v4-flash": { input: 0.14, output: 0.28, cacheRead: 0.0028 },
 		"deepseek-v4-flash-vision-exp": { input: 0.14, output: 0.28, cacheRead: 0.0028 },
 		"deepseek-v4-pro": { input: 0.435, output: 0.87, cacheRead: 0.003625 },
