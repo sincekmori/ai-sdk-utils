@@ -30,6 +30,11 @@
     "typescript/no-unsafe-type-assertion": "off",
     "typescript/promise-function-async": "off",
     "import/no-named-export": "off",
+    // TS keeps values and types in separate namespaces, and this repo pairs
+    // every Zod schema with a same-named inferred type (`const X` + `type X`).
+    // Genuine redeclarations are still caught: tsc (the typecheck step)
+    // rejects them, and eslint/no-var closes the one `var` case tsc allows.
+    "eslint/no-redeclare": "off",
     "eslint/no-undefined": "off",
     "eslint/no-undef": "off",
     "import/no-namespace": "off",
