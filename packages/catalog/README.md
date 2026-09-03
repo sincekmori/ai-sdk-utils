@@ -96,7 +96,7 @@ One JSON file, every kind of provider:
 The `$schema` line is optional — with it, your editor validates and autocompletes the file; `createCatalog` ignores the key. The package ships the schema as [`schema.json`](schema.json), so the `./node_modules/...` pointer above works right after `npm install` and always matches the installed version. Prefer a URL? Any npm CDN serves it, pinned per version:
 
 ```json
-{ "$schema": "https://cdn.jsdelivr.net/npm/ai-sdk-catalog@0.11.4/schema.json" }
+{ "$schema": "https://cdn.jsdelivr.net/npm/ai-sdk-catalog@0.12.0/schema.json" }
 ```
 
 Ready-made configs at three sizes live in [`examples/`](examples/): minimal, standard, and advanced.
