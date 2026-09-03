@@ -19,3 +19,11 @@ minimumReleaseAgeExclude:
   - "@ai-sdk/provider@4.0.0"
   - "@ai-sdk/xai@4.0.0"
   - ai@7.0.0
+overrides:
+  # @astrojs/starlight 0.41.x declares satteri ^0.9.1 but only `import type`s
+  # from it, while @astrojs/markdown-satteri >= 0.3.7 (via astro/mdx) already
+  # runs satteri 0.10.x — two copies make starlight's shipped .ts sources fail
+  # tsc. Give starlight the same range its sibling declares so the two never
+  # fork again. Scoped to starlight < 0.42.0 (which declares ^0.10.3 itself and
+  # ships .d.ts), so the entry goes dead once 0.42 is adopted — delete it then.
+  "@astrojs/starlight@<0.42.0>satteri": "^0.10.3"

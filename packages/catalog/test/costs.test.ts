@@ -6,8 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCatalog } from "../src/catalog.ts";
 import { modelCosts } from "../src/costs.gen.ts";
-import { ModelCost } from "../src/schema.ts";
-import { Vendor } from "../src/vendor-ids.ts";
+import { ModelCostSchema, VendorSchema } from "../src/schema.ts";
 
 // Cost fallback: a model whose config omits `cost` gets the embedded
 // models.dev sheet for its vendor+id. Assertions compare against the
@@ -97,11 +96,11 @@ describe("embedded models.dev costs", () => {
 	it("snapshot sanity: bundled vendors only, every sheet a valid ModelCost", () => {
 		expect(Object.keys(modelCosts).length).toBeGreaterThan(0);
 		for (const [vendor, sheets] of Object.entries(modelCosts)) {
-			expect(Vendor.options).toContain(vendor);
+			expect(VendorSchema.options).toContain(vendor);
 			expect(vendor).not.toBe("openai-compatible");
 			expect(Object.keys(sheets).length).toBeGreaterThan(0);
 			for (const sheet of Object.values(sheets)) {
-				expect(() => ModelCost.parse(sheet)).not.toThrow();
+				expect(() => ModelCostSchema.parse(sheet)).not.toThrow();
 			}
 		}
 	});

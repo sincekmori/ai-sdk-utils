@@ -8,7 +8,7 @@ import * as z from "zod";
 import { defaultCostOf } from "./costs.ts";
 import { createDirectRuntime, createGatewayRuntime, type ProviderRuntime } from "./gateway.ts";
 import { parseRoleRef, vendorBlockOf } from "./invariants.ts";
-import { Config, type ModelKey, type Provider } from "./schema.ts";
+import { type Config, ConfigSchema, type ModelKey, type Provider } from "./schema.ts";
 import { mergeSettings, withSettings } from "./settings.ts";
 import type { Catalog, CatalogOptions, ModelEntry, ProviderOverride, RoleEntry } from "./types.ts";
 import { isVendor } from "./vendors.ts";
@@ -88,7 +88,7 @@ export function createCatalog<const Role extends string = string>(
 	config: Config,
 	options: CatalogOptions<Role> = {},
 ): Catalog<Role> {
-	const parsed = Config.safeParse(config);
+	const parsed = ConfigSchema.safeParse(config);
 	if (!parsed.success) {
 		// ZodError#message is a raw JSON dump; prettifyError renders each issue
 		// with its path in a single readable block.

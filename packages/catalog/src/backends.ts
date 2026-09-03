@@ -3,8 +3,8 @@
 
 import * as z from "zod";
 
-import { ApiKey, QueryParams, RequestHeaders } from "./headers.ts";
-import { Vendor } from "./vendor-ids.ts";
+import { ApiKeySchema, QueryParamsSchema, RequestHeadersSchema } from "./headers.ts";
+import { VendorSchema } from "./vendor-ids.ts";
 
 /**
  * Gateway topology schemas: how each upstream backend is laid out on your own
@@ -27,10 +27,10 @@ import { Vendor } from "./vendor-ids.ts";
  * so the template must also contain `{action}` and the whole URL is rewritten —
  * including the streaming/non-streaming method switch via `actionMap`.
  */
-export const GatewayBackend = z
+export const GatewayBackendSchema = z
 	.strictObject({
 		// The upstream vendor this backend speaks.
-		vendor: Vendor,
+		vendor: VendorSchema,
 		// Path appended to the gateway's baseURL, e.g. "anthropic/{slug}" or
 		// "google/eu/{slug}:{action}". A region is just a path segment you write in.
 		pathTemplate: z
@@ -54,8 +54,8 @@ export const GatewayBackend = z
 		includeUsage: z.boolean().optional(),
 		// Extra headers / query params for this backend only, merged over the
 		// gateway-level ones (backend wins per name).
-		headers: RequestHeaders.optional(),
-		query: QueryParams.optional(),
+		headers: RequestHeadersSchema.optional(),
+		query: QueryParamsSchema.optional(),
 	})
 	.superRefine((backend, ctx) => {
 		if (backend.vendor === "google") {
@@ -87,7 +87,7 @@ export const GatewayBackend = z
 			}
 		}
 	});
-export type GatewayBackend = z.infer<typeof GatewayBackend>;
+export type GatewayBackend = z.infer<typeof GatewayBackendSchema>;
 
 /**
  * The topology of a provider that lives behind your own LLM gateway: where it
@@ -95,20 +95,20 @@ export type GatewayBackend = z.infer<typeof GatewayBackend>;
  * live at the provider level (tagged with `backend`). Presence of this block is
  * what makes a provider gateway-routed.
  */
-export const GatewayOptions = z.strictObject({
+export const GatewayOptionsSchema = z.strictObject({
 	// Base URL of the gateway, e.g. "https://gateway.example.com/v1".
 	baseURL: z.string().min(1),
 	// API key for the gateway: a literal string, or { "envVarName": "..." }.
 	// Omitted, the "AI_GATEWAY_API_KEY" environment variable is read instead.
-	apiKey: ApiKey.optional(),
+	apiKey: ApiKeySchema.optional(),
 	// Extra headers sent with every request to the gateway (all backends).
 	// An inline value may embed the gateway key via "{apiKey}", e.g.
 	// { "Authorization": "Bearer {apiKey}" }.
-	headers: RequestHeaders.optional(),
+	headers: RequestHeadersSchema.optional(),
 	// Query params appended to every request URL (after the path rewriting),
 	// e.g. { "api-version": "2026-01-01" }.
-	query: QueryParams.optional(),
-	// The upstream backends, under keys of your choice (see GatewayBackend).
-	backends: z.record(z.string().min(1), GatewayBackend),
+	query: QueryParamsSchema.optional(),
+	// The upstream backends, under keys of your choice (see GatewayBackendSchema).
+	backends: z.record(z.string().min(1), GatewayBackendSchema),
 });
-export type GatewayOptions = z.infer<typeof GatewayOptions>;
+export type GatewayOptions = z.infer<typeof GatewayOptionsSchema>;

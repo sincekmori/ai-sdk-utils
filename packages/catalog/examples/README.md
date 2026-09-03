@@ -8,7 +8,7 @@ Config files come in three sizes; each builds a catalog as-is with `createCatalo
 | [`ai-sdk-catalog.standard.json`](ai-sdk-catalog.standard.json) | Several direct vendors, inherited default call settings, and a local OpenAI-compatible server (Ollama) — still config-only. Price sheets (`cost`) are not written: the catalog fills them from its embedded models.dev snapshot; write `cost` only to pin or correct a price. |
 | [`ai-sdk-catalog.advanced.json`](ai-sdk-catalog.advanced.json) | Everything above plus an `openai-compatible` vendor (Fireworks, with `supportsStructuredOutputs`), your own gateway (multiple backends including two of one vendor, `headers`/`query`, `actionMap`, `slug` overrides), and per-model `providerOptions` merging.               |
 
-The JSON examples point at the package's shipped [`schema.json`](../schema.json) via `"$schema"` (here as the relative `../schema.json`; in your own project, `./node_modules/ai-sdk-catalog/schema.json` or a versioned CDN URL) so editors validate and autocomplete them. It is generated from the Zod `Config` schema by [`scripts/generate-schema.ts`](../scripts/generate-schema.ts), and a test fails if it drifts. Regenerate it after changing `src/schema.ts`:
+The JSON examples point at the package's shipped [`schema.json`](../schema.json) via `"$schema"` (here as the relative `../schema.json`; in your own project, `./node_modules/ai-sdk-catalog/schema.json` or a versioned CDN URL) so editors validate and autocomplete them. It is generated from the Zod `ConfigSchema` by [`scripts/generate-schema.ts`](../scripts/generate-schema.ts), and a test fails if it drifts. Regenerate it after changing `src/schema.ts`:
 
 ```bash
 pnpm generate-schema && pnpm format
