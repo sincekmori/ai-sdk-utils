@@ -4,10 +4,10 @@
 import { describe, expect, it } from "vitest";
 
 import { createCatalog } from "../src/catalog.ts";
-import { Config } from "../src/schema.ts";
+import { ConfigSchema } from "../src/schema.ts";
 import type { Catalog } from "../src/types.ts";
 
-const gatewayConfig = Config.parse({
+const gatewayConfig = ConfigSchema.parse({
 	providers: [
 		{
 			id: "acme",

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { generateText } from "ai";
 import * as z from "zod";
 
-import { Config, createCatalog } from "../src/index.ts";
+import { type Config, ConfigSchema, createCatalog } from "../src/index.ts";
 
 // In a real app this import is `from "ai-sdk-catalog"`.
 // Examples use the relative source path so they run against the local checkout.
@@ -66,5 +66,5 @@ await generateText({ model: local.modelForRole("local"), prompt: "ping" });
 // The package already ships this as schema.json — point a `"$schema"` key at
 // "./node_modules/ai-sdk-catalog/schema.json" (or a versioned CDN URL). This
 // is how scripts/generate-schema.ts produces it.
-const jsonSchema = z.toJSONSchema(Config);
+const jsonSchema = z.toJSONSchema(ConfigSchema);
 console.log(JSON.stringify(jsonSchema, undefined, 2));

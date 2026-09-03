@@ -18,16 +18,16 @@ import * as z from "zod";
  * A reference to an environment variable, read lazily when the provider is
  * first used — so declaring a provider you never call requires nothing.
  */
-export const EnvVarRef = z.strictObject({ envVarName: z.string().min(1) });
-export type EnvVarRef = z.infer<typeof EnvVarRef>;
+export const EnvVarRefSchema = z.strictObject({ envVarName: z.string().min(1) });
+export type EnvVarRef = z.infer<typeof EnvVarRefSchema>;
 
 /**
  * An API key: a literal string, or `{ "envVarName": "..." }` to read it from
  * that environment variable at first use. Prefer the env-var form to keep
  * secrets out of the file.
  */
-export const ApiKey = z.union([z.string().min(1), EnvVarRef]);
-export type ApiKey = z.infer<typeof ApiKey>;
+export const ApiKeySchema = z.union([z.string().min(1), EnvVarRefSchema]);
+export type ApiKey = z.infer<typeof ApiKeySchema>;
 
 /**
  * One header value:
@@ -37,24 +37,24 @@ export type ApiKey = z.infer<typeof ApiKey>;
  *   - `{ "envVarName": "..." }` — read from that environment variable when the
  *     provider is first used (same laziness as the API key), sent verbatim.
  */
-export const HeaderValue = z.union([z.string().min(1), EnvVarRef]);
-export type HeaderValue = z.infer<typeof HeaderValue>;
+export const HeaderValueSchema = z.union([z.string().min(1), EnvVarRefSchema]);
+export type HeaderValue = z.infer<typeof HeaderValueSchema>;
 
 /**
  * Extra request headers, by header name. Merged into every request the
  * provider (or gateway backend) makes, on top of the vendor SDK's own headers —
  * so a header named here overrides the SDK's (e.g. an explicit `x-api-key`).
  */
-export const RequestHeaders = z.record(z.string().min(1), HeaderValue);
-export type RequestHeaders = z.infer<typeof RequestHeaders>;
+export const RequestHeadersSchema = z.record(z.string().min(1), HeaderValueSchema);
+export type RequestHeaders = z.infer<typeof RequestHeadersSchema>;
 
 /**
  * Query parameters appended to every request URL (for a gateway, after the
  * path rewriting). A parameter already present in the URL is overridden.
  * Values are plain text — don't put secrets in URLs; use a header instead.
  */
-export const QueryParams = z.record(z.string().min(1), z.string());
-export type QueryParams = z.infer<typeof QueryParams>;
+export const QueryParamsSchema = z.record(z.string().min(1), z.string());
+export type QueryParams = z.infer<typeof QueryParamsSchema>;
 
 /** Placeholder in a string header value, replaced with the resolved API key. */
 export const API_KEY_PLACEHOLDER = "{apiKey}";

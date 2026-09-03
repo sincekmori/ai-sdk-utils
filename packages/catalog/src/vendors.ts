@@ -15,7 +15,7 @@ import { createXai } from "@ai-sdk/xai";
 import type { LanguageModel } from "ai";
 
 import type { ModelApi } from "./schema.ts";
-import { Vendor } from "./vendor-ids.ts";
+import { type Vendor, VendorSchema } from "./vendor-ids.ts";
 
 /**
  * The call surfaces a bundled `@ai-sdk/*` provider may expose. Every provider
@@ -51,7 +51,7 @@ export interface VendorOptions {
 
 /** True when `value` names a bundled vendor. */
 export function isVendor(value: string): value is Vendor {
-	return Vendor.safeParse(value).success;
+	return VendorSchema.safeParse(value).success;
 }
 
 /**

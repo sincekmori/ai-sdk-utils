@@ -10,7 +10,7 @@ import * as z from "zod";
  * Bedrock / Vertex / Azure are intentionally omitted: their bespoke cloud auth
  * doesn't fit here — wire them through a `resolve` override instead.
  */
-export const Vendor = z.enum([
+export const VendorSchema = z.enum([
 	"anthropic",
 	"openai",
 	"openai-compatible",
@@ -22,4 +22,4 @@ export const Vendor = z.enum([
 	"perplexity",
 	"google",
 ]);
-export type Vendor = z.infer<typeof Vendor>;
+export type Vendor = z.infer<typeof VendorSchema>;

@@ -7,14 +7,14 @@ import { API_KEY_PLACEHOLDER, headersNeedApiKey } from "./headers.ts";
 import type { Provider, RoleRef, RoleTarget, VendorBlock } from "./schema.ts";
 
 /**
- * Whole-config invariants for {@link Config}: uniqueness, gateway/backend
+ * Whole-config invariants for {@link ConfigSchema}: uniqueness, gateway/backend
  * coherence, and referential integrity. Structural validation lives in the
  * field schemas; these checks need the full object, so they run in the
  * schema's `superRefine`. The small config helpers shared with the catalog
  * (`vendorBlockOf`, `parseRoleRef`) live here too.
  */
 
-/** The shape `Config`'s refinement receives (its base object, pre-refinement). */
+/** The shape `ConfigSchema`'s refinement receives (its base object, pre-refinement). */
 interface ConfigShape {
 	$schema?: string | undefined;
 	providers: Provider[];
@@ -162,7 +162,7 @@ export function checkProviderModels(p: Provider, i: number, ctx: Ctx): void {
 	}
 }
 
-/** The `superRefine` callback backing {@link Config}. */
+/** The `superRefine` callback backing {@link ConfigSchema}. */
 export function configInvariants(cfg: ConfigShape, ctx: Ctx): void {
 	// 1. provider id uniqueness, model id uniqueness, and per-kind coherence
 	const providerIds = new Set<string>();

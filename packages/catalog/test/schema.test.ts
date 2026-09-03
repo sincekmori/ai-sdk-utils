@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import buildConfigJsonSchema from "../scripts/generate-schema.ts";
 import { createCatalog } from "../src/catalog.ts";
-import { Config } from "../src/schema.ts";
+import { type Config, ConfigSchema } from "../src/schema.ts";
 
 // Loose shapes so negative tests can mutate freely; createCatalog validates.
 interface RawModel {
@@ -83,11 +83,11 @@ const errorOf = (data: unknown): string => {
 
 describe("config schema", () => {
 	it("parses a valid config", () => {
-		expect(() => Config.parse(valid)).not.toThrow();
+		expect(() => ConfigSchema.parse(valid)).not.toThrow();
 	});
 
 	it("keeps call settings on the model", () => {
-		const parsed = Config.parse(valid);
+		const parsed = ConfigSchema.parse(valid);
 		expect(parsed.providers[0]?.models[0]?.settings).toStrictEqual({
 			temperature: 0.7,
 			maxOutputTokens: 128_000,
@@ -95,7 +95,7 @@ describe("config schema", () => {
 	});
 
 	it("allows omitting settings", () => {
-		const parsed = Config.parse(valid);
+		const parsed = ConfigSchema.parse(valid);
 		expect(parsed.providers[1]?.models[0]?.settings).toBeUndefined();
 	});
 

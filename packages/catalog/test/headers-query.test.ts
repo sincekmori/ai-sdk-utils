@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createCatalog } from "../src/catalog.ts";
-import { Config } from "../src/schema.ts";
+import { ConfigSchema } from "../src/schema.ts";
 import type { Catalog } from "../src/types.ts";
 
 // Records the URL and headers of every request; replies with a canned 500 that
@@ -35,7 +35,7 @@ function doGenerate(catalog: Catalog, role: string): Promise<unknown> {
 
 describe("config headers and query on the wire", () => {
 	it("gateway: merges gateway/backend headers, substitutes {apiKey}, appends query", async () => {
-		const config = Config.parse({
+		const config = ConfigSchema.parse({
 			providers: [
 				{
 					id: "acme",
@@ -76,7 +76,7 @@ describe("config headers and query on the wire", () => {
 	});
 
 	it("direct provider: sends configured headers and query alongside the vendor's own", async () => {
-		const config = Config.parse({
+		const config = ConfigSchema.parse({
 			providers: [
 				{
 					id: "anthropic",
@@ -104,7 +104,7 @@ describe("config headers and query on the wire", () => {
 	});
 
 	it("direct provider: a configured header overrides the vendor SDK's own", async () => {
-		const config = Config.parse({
+		const config = ConfigSchema.parse({
 			providers: [
 				{
 					id: "anthropic",

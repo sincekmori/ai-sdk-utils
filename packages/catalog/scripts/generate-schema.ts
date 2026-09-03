@@ -3,9 +3,9 @@ import { join } from "node:path";
 
 import * as z from "zod";
 
-import { Config } from "../src/index.ts";
+import { ConfigSchema } from "../src/index.ts";
 
-// Emits schema.json (shipped in the npm package) from the Zod Config schema,
+// Emits schema.json (shipped in the npm package) from `ConfigSchema`,
 // so a config file's `"$schema"` pointer gets editor validation and
 // autocompletion. Regenerate after changing src/schema.ts (the format pass
 // settles array wrapping the way the repo formatter likes it):
@@ -17,7 +17,7 @@ import { Config } from "../src/index.ts";
 
 /** The JSON Schema for a config file, as written to schema.json. */
 function buildConfigJsonSchema(): z.core.JSONSchema.BaseSchema {
-	const schema = z.toJSONSchema(Config);
+	const schema = z.toJSONSchema(ConfigSchema);
 	// The config schema knows nothing about the `$schema` pointer itself; allow
 	// it so editors don't flag the very key that wires them up.
 	schema.properties = { $schema: { type: "string" }, ...schema.properties };

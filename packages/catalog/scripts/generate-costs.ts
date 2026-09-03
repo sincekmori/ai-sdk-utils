@@ -3,41 +3,43 @@ import { join } from "node:path";
 
 import * as z from "zod";
 
-import { ModelCost } from "../src/schema.ts";
-import { Vendor } from "../src/vendor-ids.ts";
+import { type ModelCost, ModelCostSchema, VendorSchema } from "../src/schema.ts";
 
 // Emits src/costs.gen.ts: a snapshot of models.dev price sheets for the bundled
 // vendors, so a model whose config omits `cost` still surfaces a price sheet
 // through `meta`/`metaForRole` (see src/costs.ts). models.dev provider ids
-// match the {@link Vendor} enum 1:1; `openai-compatible` is skipped because it
+// match the {@link VendorSchema} enum 1:1; `openai-compatible` is skipped because it
 // names a protocol, not an upstream with a price list. Regenerate to refresh
 // the prices (git history of the generated file tells you how stale it is):
 //
 //   pnpm generate-costs && pnpm format
 //
-// Every snapshotted price passes the ModelCost schema, so a models.dev unit
+// Every snapshotted price passes `ModelCostSchema`, so a models.dev unit
 // mix-up (or a price above the sanity cap) fails the generation instead of
 // shipping.
 
 const API_URL = "https://models.dev/api.json";
 
 /** Vendors with a models.dev price list (all but `openai-compatible`). */
-const vendors = Vendor.options.filter((v) => v !== "openai-compatible");
+const vendors = VendorSchema.options.filter((v) => v !== "openai-compatible");
 
 // The slice of the models.dev dump this generator reads.
-const ModelsDevCost = z.looseObject({
+const ModelsDevCostSchema = z.looseObject({
 	input: z.number().optional(),
 	output: z.number().optional(),
 	cache_read: z.number().optional(),
 	cache_write: z.number().optional(),
 });
-const ModelsDevModalities = z.looseObject({ output: z.array(z.string()).optional() });
-const ModelsDevModel = z.looseObject({
-	cost: ModelsDevCost.optional(),
-	modalities: ModelsDevModalities.optional(),
+const ModelsDevModalitiesSchema = z.looseObject({ output: z.array(z.string()).optional() });
+const ModelsDevModelSchema = z.looseObject({
+	cost: ModelsDevCostSchema.optional(),
+	modalities: ModelsDevModalitiesSchema.optional(),
 });
-const ModelsDevProvider = z.looseObject({ models: z.record(z.string(), ModelsDevModel) });
-const ModelsDevApi = z.record(z.string(), ModelsDevProvider);
+const ModelsDevProviderSchema = z.looseObject({
+	models: z.record(z.string(), ModelsDevModelSchema),
+});
+const ModelsDevApiSchema = z.record(z.string(), ModelsDevProviderSchema);
+type ModelsDevProvider = z.infer<typeof ModelsDevProviderSchema>;
 
 const buckets = ["input", "output", "cacheRead", "cacheWrite"] as const;
 
@@ -54,13 +56,13 @@ function renderCost(cost: ModelCost): string {
  * that don't output text (image generation, TTS, video) are skipped — the
  * catalog hands out language models, so their sheets would be dead weight.
  */
-function renderVendor(provider: z.infer<typeof ModelsDevProvider>): string[] {
+function renderVendor(provider: ModelsDevProvider): string[] {
 	const entries: string[] = [];
 	for (const id of Object.keys(provider.models).toSorted()) {
 		const model = provider.models[id];
 		const cost = model?.cost;
 		if (cost && model.modalities?.output?.includes("text") === true) {
-			const sheet = ModelCost.parse({
+			const sheet = ModelCostSchema.parse({
 				input: cost.input,
 				output: cost.output,
 				cacheRead: cost.cache_read,
@@ -76,7 +78,7 @@ function renderVendor(provider: z.infer<typeof ModelsDevProvider>): string[] {
 
 /** Builds the generated module's source from the models.dev dump. */
 function buildCostsModule(api: unknown): string {
-	const data = ModelsDevApi.parse(api);
+	const data = ModelsDevApiSchema.parse(api);
 	const lines = [
 		"// Copyright 2026 Shinsuke Mori",
 		"// SPDX-License-Identifier: Apache-2.0",

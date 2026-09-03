@@ -5,12 +5,12 @@ import type { LanguageModel } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
 import { createCatalog } from "../src/catalog.ts";
-import { Config } from "../src/schema.ts";
+import { ConfigSchema } from "../src/schema.ts";
 import type { ModelEntry, ProviderOverride } from "../src/types.ts";
 
 // Behavioral config: every provider is backed by a resolve override, so the
 // catalog never touches a real SDK or the network for these tests.
-const config = Config.parse({
+const config = ConfigSchema.parse({
 	providers: [
 		{
 			id: "openai",
@@ -144,7 +144,7 @@ describe("createCatalog", () => {
 	});
 
 	it("merges provider-level default settings with the model's own (model wins)", () => {
-		const merged = Config.parse({
+		const merged = ConfigSchema.parse({
 			providers: [
 				{
 					id: "openai",
@@ -189,7 +189,7 @@ describe("createCatalog", () => {
 	});
 
 	it("resolves the string role shorthand, splitting at the first colon", () => {
-		const shorthand = Config.parse({
+		const shorthand = ConfigSchema.parse({
 			providers: [{ id: "ollama", models: [{ id: "qwen3.6:35b", api: "chat" }] }],
 			roles: { local: "ollama:qwen3.6:35b" },
 		});
@@ -201,7 +201,7 @@ describe("createCatalog", () => {
 	});
 
 	it("throws for a provider that is neither a built-in vendor nor has a resolve override", () => {
-		const cfg = Config.parse({
+		const cfg = ConfigSchema.parse({
 			providers: [{ id: "ollama", models: [{ id: "qwen3.6:35b" }] }],
 			roles: { local: { provider: "ollama", model: "qwen3.6:35b" } },
 		});

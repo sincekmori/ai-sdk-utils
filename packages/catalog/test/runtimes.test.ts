@@ -4,14 +4,14 @@
 import { describe, expect, it } from "vitest";
 
 import { createCatalog } from "../src/catalog.ts";
-import { Config } from "../src/schema.ts";
+import { ConfigSchema } from "../src/schema.ts";
 
 // Runtime behavior of the two config-driven provider kinds: a direct @ai-sdk
 // vendor and a gateway. Resolve-override behavior lives in catalog.test.ts.
 
 describe("createCatalog with a direct vendor", () => {
 	it("resolves a bare provider through its @ai-sdk vendor (vendor defaults to id)", () => {
-		const cfg = Config.parse({
+		const cfg = ConfigSchema.parse({
 			providers: [
 				{ id: "openai", vendor: { apiKey: "test-key" }, models: [{ id: "gpt-5.6-luna" }] },
 			],
@@ -23,7 +23,7 @@ describe("createCatalog with a direct vendor", () => {
 	});
 
 	it("honors an explicit vendor different from the provider id", () => {
-		const cfg = Config.parse({
+		const cfg = ConfigSchema.parse({
 			providers: [
 				{
 					id: "claude",
@@ -39,7 +39,7 @@ describe("createCatalog with a direct vendor", () => {
 	});
 
 	it("accepts the string shorthand for the vendor", () => {
-		const cfg = Config.parse({
+		const cfg = ConfigSchema.parse({
 			providers: [{ id: "claude", vendor: "anthropic", models: [{ id: "claude-opus-4-8" }] }],
 			roles: { chat: { provider: "claude", model: "claude-opus-4-8" } },
 		});
@@ -49,7 +49,7 @@ describe("createCatalog with a direct vendor", () => {
 	});
 
 	it("returns the vendor instance for a direct provider", () => {
-		const cfg = Config.parse({
+		const cfg = ConfigSchema.parse({
 			providers: [
 				{ id: "openai", vendor: { apiKey: "test-key" }, models: [{ id: "gpt-5.6-luna" }] },
 			],
@@ -62,7 +62,7 @@ describe("createCatalog with a direct vendor", () => {
 });
 
 describe("createCatalog with a gateway provider", () => {
-	const gatewayConfig = Config.parse({
+	const gatewayConfig = ConfigSchema.parse({
 		providers: [
 			{
 				id: "acme",
@@ -91,7 +91,7 @@ describe("createCatalog with a gateway provider", () => {
 	});
 
 	it("routes each gateway model to its backend's vendor, including two backends of one vendor", () => {
-		const cfg = Config.parse({
+		const cfg = ConfigSchema.parse({
 			providers: [
 				{
 					id: "gw",
