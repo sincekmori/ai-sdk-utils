@@ -1,5 +1,11 @@
 # ai-sdk-catalog
 
+## 0.12.2
+
+### Patch Changes
+
+- f8c9629: chore(catalog): refresh the embedded models.dev cost snapshot
+
 ## 0.12.1
 
 ### Patch Changes
