@@ -35,11 +35,11 @@
     "access": "public"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "ai": "^7.0.85"
+    "ai": "^7.0.93"
   },
   "peerDependencies": {
     "ai": ">=7.0.0"

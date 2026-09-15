@@ -30,5 +30,7 @@ export default defineConfig({
 	},
 	// Validate the published package shape on every build (locally and in CI).
 	publint: true,
-	attw: true,
+	// Every package ships CJS too, so keep checking the node10 / node16-cjs
+	// resolutions as well (tsdown 0.23 made `esm-only` the default profile).
+	attw: { profile: "strict" },
 });
