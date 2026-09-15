@@ -145,8 +145,9 @@ export const modelCosts: VendorCosts = {
 		"grok-build-0.1": { input: 1, output: 2, cacheRead: 0.2 },
 	},
 	deepseek: {
-		"deepseek-v4-flash": { input: 0.14, output: 0.28, cacheRead: 0.0028 },
-		"deepseek-v4-flash-vision-exp": { input: 0.14, output: 0.28, cacheRead: 0.0028 },
+		"deepseek-flash": { input: 0.15, output: 0.6, cacheRead: 0.003 },
+		"deepseek-v4-flash": { input: 0.15, output: 0.6, cacheRead: 0.003 },
+		"deepseek-v4-flash-vision-exp": { input: 0.15, output: 0.6, cacheRead: 0.003 },
 		"deepseek-v4-pro": { input: 0.435, output: 0.87, cacheRead: 0.003625 },
 	},
 	perplexity: {
