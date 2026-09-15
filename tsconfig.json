@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // The root-level scripts and build configs use Node built-ins (node:fs,
+    // import.meta.dirname), so load the Node type definitions explicitly.
+    "types": ["node"]
+  },
+  "include": ["scripts", "*.config.ts"]
+}
