@@ -50,22 +50,22 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.49",
-    "@ai-sdk/cohere": "^4.0.37",
-    "@ai-sdk/deepseek": "^3.0.39",
-    "@ai-sdk/google": "^4.0.64",
-    "@ai-sdk/groq": "^4.0.37",
-    "@ai-sdk/mistral": "^4.0.39",
-    "@ai-sdk/openai": "^4.0.60",
-    "@ai-sdk/openai-compatible": "^3.0.44",
-    "@ai-sdk/perplexity": "^4.0.39",
-    "@ai-sdk/provider-utils": "^5.0.36",
-    "@ai-sdk/xai": "^4.0.54",
-    "zod": "^4.5.4"
+    "@ai-sdk/anthropic": "^4.0.53",
+    "@ai-sdk/cohere": "^4.0.41",
+    "@ai-sdk/deepseek": "^3.0.44",
+    "@ai-sdk/google": "^4.0.69",
+    "@ai-sdk/groq": "^4.0.41",
+    "@ai-sdk/mistral": "^4.0.43",
+    "@ai-sdk/openai": "^4.0.66",
+    "@ai-sdk/openai-compatible": "^3.0.48",
+    "@ai-sdk/perplexity": "^4.0.43",
+    "@ai-sdk/provider-utils": "^5.0.40",
+    "@ai-sdk/xai": "^4.0.58",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/node": "^26.5.0",
-    "ai": "^7.0.93"
+    "@types/node": "^26.5.1",
+    "ai": "^7.0.99"
   },
   "peerDependencies": {
     "ai": ">=7.0.0"
