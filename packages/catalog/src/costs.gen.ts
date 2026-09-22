@@ -110,6 +110,7 @@ export const modelCosts: VendorCosts = {
 		"pixtral-large-latest": { input: 2, output: 6 },
 		"voxtral-small-latest": { input: 0.1, output: 0.3 },
 		"zai-glm-5-2": { input: 1.4, output: 4.4, cacheRead: 0.14 },
+		"zai-glm-5-3": { input: 1.4, output: 4.4, cacheRead: 0.14 },
 	},
 	cohere: {
 		"command-a-03-2025": { input: 2.5, output: 10 },
