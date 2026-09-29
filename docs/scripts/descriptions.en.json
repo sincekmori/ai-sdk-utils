@@ -20,7 +20,7 @@
   "providers[].models": "The models this provider serves.",
   "providers[].models[]": "One model the provider serves.",
   "providers[].models[].id": "The vendor's model id (e.g. `gpt-5.6`). Referenced by `roles` and used in the `provider:model` key.",
-  "providers[].models[].api": "The API surface used to call the model. Omit for the vendor's default: the Responses API for OpenAI, Chat Completions for an OpenAI-compatible server, and the single native surface for every other vendor.",
+  "providers[].models[].api": "The API surface used to call the model. Omit for the vendor's default: the Responses API for OpenAI and xAI, Chat Completions for an OpenAI-compatible server, and the single native surface for every other vendor. `responses` and `completion` fail when the model is resolved on a vendor without that surface; so does `chat` on `xai`, whose bundled SDK implements the Responses API only.",
   "providers[].models[].backend": "Gateway providers only: the key in `gateway.backends` that serves this model.",
   "providers[].models[].slug": "Gateway providers only: the value substituted for `{slug}` in the backend's `pathTemplate`, when it differs from `id`.",
   "providers[].models[].settings": "Default call settings for this model, merged over the provider's `settings`: scalar fields are overridden by the model, and `providerOptions` are merged per provider namespace.",

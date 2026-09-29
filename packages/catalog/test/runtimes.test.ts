@@ -126,6 +126,29 @@ describe("createCatalog with a gateway provider", () => {
 		expect(catalog.provider("gw:claude")).not.toBe(catalog.provider("gw:claude-fallback"));
 	});
 
+	it("an xai backend reaches the Responses API and rejects api chat", () => {
+		const catalog = createCatalog({
+			providers: [
+				{
+					id: "gw",
+					gateway: {
+						baseURL: "https://gw.example.com/v1",
+						apiKey: "test-key",
+						backends: { grok: { vendor: "xai", pathTemplate: "xai/{slug}" } },
+					},
+					models: [
+						{ id: "grok-4.7", backend: "grok" },
+						{ id: "grok-4.7-chat", backend: "grok", slug: "grok-4.7", api: "chat" },
+					],
+				},
+			],
+			roles: {},
+		});
+		const model = catalog.model("gw:grok-4.7") as unknown as { provider: string };
+		expect(model.provider).toBe("xai.responses");
+		expect(() => catalog.model("gw:grok-4.7-chat")).toThrow(/api "chat" is not available/u);
+	});
+
 	it("exposes the backend's provider instance via provider(key)", () => {
 		const catalog = createCatalog(gatewayConfig);
 		const anthropic = catalog.provider<{ languageModel: unknown }>("acme:claude-sonnet-4-6");

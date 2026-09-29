@@ -130,8 +130,11 @@ The block's fields (all optional):
 The `openai-compatible`-only fields (`name`, `supportsStructuredOutputs`, `includeUsage`) fail validation on any other vendor — they would be silently ignored otherwise.
 
 A model's `api` picks the call surface — `responses`, `chat`, or `completion`.
-Omit it for the vendor's default: **OpenAI defaults to the Responses API**, an OpenAI-compatible server to Chat Completions, and every other vendor to its single surface.
+Omit it for the vendor's default: **OpenAI and xAI default to the Responses API**, an OpenAI-compatible server to Chat Completions, and every other vendor to its single surface.
 Set `api: chat` when a gateway or server only speaks Chat Completions.
+`responses` and `completion` throw when the model is resolved on a vendor without that surface.
+`chat` throws on `xai`, whose bundled SDK implements the Responses API only; on a single-surface vendor it resolves to that one surface.
+To reach xAI models through a Chat Completions-only endpoint, declare it as `openai-compatible` — that vendor has no embedded price sheet, so write the model's `cost` yourself, and set `name: "xai"` to keep the `providerOptions.xai` namespace.
 
 Supported vendors: `anthropic`, `openai`, `openai-compatible`, `mistral`, `cohere`, `groq`, `xai`, `deepseek`, `perplexity`, `google`.
 The OpenAI-compatible family (Fireworks, Together, Cerebras, DeepInfra, Ollama, …) is covered by `openai-compatible`.

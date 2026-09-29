@@ -20,7 +20,9 @@ import { type Vendor, VendorSchema } from "./vendor-ids.ts";
 /**
  * The call surfaces a bundled `@ai-sdk/*` provider may expose. Every provider
  * implements `languageModel` (its default surface); OpenAI adds `chat` /
- * `responses` / `completion`, and OpenAI-compatible adds `completionModel`.
+ * `responses` / `completion`, xAI adds `responses` (the only surface its SDK
+ * implements), and OpenAI-compatible adds `completionModel`. Several
+ * single-surface vendors also expose `chat` as an alias of that one surface.
  */
 export interface VendorProvider {
 	languageModel(modelId: string): LanguageModel;
@@ -110,9 +112,9 @@ export function createVendor(vendor: Vendor, options: VendorOptions): VendorProv
 
 /**
  * Picks the call surface for a model handle from its {@link ModelApi}. Omit
- * `api` for the vendor's default surface (Responses for OpenAI, Chat Completions
- * for an OpenAI-compatible server, the single surface for everyone else).
- * Throws when a specific surface is asked for but the vendor lacks it.
+ * `api` for the vendor's default surface (Responses for OpenAI and xAI, Chat
+ * Completions for an OpenAI-compatible server, the single surface for everyone
+ * else). Throws when a specific surface is asked for but the vendor lacks it.
  */
 export function callSurface(
 	provider: VendorProvider,
@@ -127,11 +129,19 @@ export function callSurface(
 			return provider.responses(modelId);
 		}
 		case "chat": {
-			// OpenAI exposes `chat`; an OpenAI-compatible server's default surface IS
-			// Chat Completions, so `languageModel` covers it there.
-			return typeof provider.chat === "function"
-				? provider.chat(modelId)
-				: provider.languageModel(modelId);
+			if (typeof provider.chat === "function") {
+				return provider.chat(modelId);
+			}
+			// An SDK that names a `responses` surface but no `chat` one implements
+			// the Responses API only (xAI), so its default surface is no stand-in.
+			if (typeof provider.responses === "function") {
+				throw new TypeError(
+					`Model "${modelId}": api "chat" is not available on this vendor (its SDK implements the Responses API only).`,
+				);
+			}
+			// Everyone else has a single surface; for an OpenAI-compatible server
+			// that surface IS Chat Completions.
+			return provider.languageModel(modelId);
 		}
 		case "completion": {
 			if (typeof provider.completion === "function") {

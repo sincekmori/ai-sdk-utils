@@ -20,7 +20,7 @@
   "providers[].models": "このプロバイダが提供するモデルの一覧。",
   "providers[].models[]": "プロバイダが提供する 1 つのモデル。",
   "providers[].models[].id": "ベンダ側のモデル ID(例: `gpt-5.6`)。`roles` から参照され、`provider:model` キーにも使われます。",
-  "providers[].models[].api": "モデルを呼び出す API サーフェス。省略時はベンダの既定値 — OpenAI は Responses API、OpenAI 互換サーバーは Chat Completions、それ以外のベンダは各自の単一サーフェスです。",
+  "providers[].models[].api": "モデルを呼び出す API サーフェス。省略時はベンダの既定値 — OpenAI と xAI は Responses API、OpenAI 互換サーバーは Chat Completions、それ以外のベンダは各自の単一サーフェスです。`responses` と `completion` は、そのサーフェスを持たないベンダではモデルの解決時にエラーになります。`chat` は `xai` でエラーになります(同梱の SDK が Responses API のみを実装するため)。",
   "providers[].models[].backend": "ゲートウェイプロバイダ専用: このモデルを提供する `gateway.backends` のキー。",
   "providers[].models[].slug": "ゲートウェイプロバイダ専用: バックエンドの `pathTemplate` 内 `{slug}` に代入される値。`id` と異なる場合に指定します。",
   "providers[].models[].settings": "このモデルの呼び出し設定の既定値。プロバイダの `settings` にマージされます: スカラー値はモデル側が優先され、`providerOptions` はプロバイダ名前空間ごとにマージされます。",
