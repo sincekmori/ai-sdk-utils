@@ -45,15 +45,17 @@ const PriceSchema = z
 
 /**
  * Which API surface a model is reached through:
- *   - "responses"  -> `provider.responses(modelId)` (OpenAI Responses API)
+ *   - "responses"  -> `provider.responses(modelId)` (Responses API: OpenAI, xAI)
  *   - "chat"       -> `provider.chat(modelId)`      (Chat Completions)
  *   - "completion" -> `provider.completion(modelId)` (legacy Completions)
  *
- * Omit it to use the vendor's own default surface — for OpenAI that is the
- * **Responses API** (the current default), for an OpenAI-compatible server it is
- * Chat Completions, and for every other vendor it is their single surface. Set
- * it explicitly when a gateway or server speaks a specific one (e.g. `chat` for
- * a gateway that only exposes Chat Completions).
+ * Omit it to use the vendor's own default surface — for OpenAI and xAI that is
+ * the **Responses API**, for an OpenAI-compatible server it is Chat
+ * Completions, and for every other vendor it is their single surface. Set it
+ * explicitly when a gateway or server speaks a specific one (e.g. `chat` for a
+ * gateway that only exposes Chat Completions). `responses` and `completion`
+ * throw when the model is resolved on a vendor without that surface; so does
+ * `chat` on xAI, whose bundled SDK implements the Responses API only.
  */
 export const ModelApiSchema = z.enum(["responses", "chat", "completion"]);
 export type ModelApi = z.infer<typeof ModelApiSchema>;
