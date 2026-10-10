@@ -1,5 +1,11 @@
 # ai-sdk-ping
 
+## 0.3.1
+
+### Patch Changes
+
+- f8c6b5f: Move every example, doc and comment to the current model generation (`gpt-6-astra`, `gpt-6-luna`, `claude-sonnet-5-5`, `claude-opus-5-5`, `gemini-3.8-flash`, `qwen3.8:27b`) and refresh the embedded models.dev cost snapshot so those ids carry price sheets.
+
 ## 0.3.0
 
 ### Minor Changes
