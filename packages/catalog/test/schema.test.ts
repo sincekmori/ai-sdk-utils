@@ -48,7 +48,7 @@ const valid: RawConfig = {
 	providers: [
 		{
 			id: "openai",
-			models: [{ id: "gpt-5.6", settings: { temperature: 0.7, maxOutputTokens: 128_000 } }],
+			models: [{ id: "gpt-6-astra", settings: { temperature: 0.7, maxOutputTokens: 128_000 } }],
 		},
 		{
 			id: "acme",
@@ -56,12 +56,12 @@ const valid: RawConfig = {
 				baseURL: "https://gateway.example.com/v1",
 				backends: { anthropic: { vendor: "anthropic", pathTemplate: "anthropic/{slug}" } },
 			},
-			models: [{ id: "claude-sonnet-5", backend: "anthropic" }],
+			models: [{ id: "claude-sonnet-5-5", backend: "anthropic" }],
 		},
 	],
 	roles: {
-		chat: { provider: "acme", model: "claude-sonnet-5" },
-		summarize: { provider: "openai", model: "gpt-5.6" },
+		chat: { provider: "acme", model: "claude-sonnet-5-5" },
+		summarize: { provider: "openai", model: "gpt-6-astra" },
 	},
 };
 
@@ -103,7 +103,7 @@ describe("config schema", () => {
 		const config = clone(valid);
 		config.providers[0].models[0].cost = { input: 1.25, output: 10, cacheRead: 0.125 };
 		const catalog = createCatalog(config as unknown as Config);
-		expect(catalog.meta.get("openai:gpt-5.6")?.cost).toStrictEqual({
+		expect(catalog.meta.get("openai:gpt-6-astra")?.cost).toStrictEqual({
 			input: 1.25,
 			output: 10,
 			cacheRead: 0.125,
@@ -150,7 +150,7 @@ describe("config schema", () => {
 
 	it("invariant 3a: rejects a role referencing an unknown provider", () => {
 		const bad = clone(valid);
-		bad.roles.chat = { provider: "mistral", model: "claude-sonnet-5" };
+		bad.roles.chat = { provider: "mistral", model: "claude-sonnet-5-5" };
 		expect(errorOf(bad)).toContain("unknown provider");
 	});
 
@@ -163,7 +163,7 @@ describe("config schema", () => {
 	it('invariant 4: rejects ":" in a provider id (it would break the role shorthand)', () => {
 		const bad = clone(valid);
 		bad.providers[0].id = "open:ai";
-		bad.roles.summarize = { provider: "open:ai", model: "gpt-5.6" };
+		bad.roles.summarize = { provider: "open:ai", model: "gpt-6-astra" };
 		expect(errorOf(bad)).toContain('must not contain ":"');
 	});
 
@@ -171,7 +171,7 @@ describe("config schema", () => {
 
 	it("accepts the string shorthand and splits it at the first colon", () => {
 		const ok = clone(valid);
-		ok.roles.chat = "acme:claude-sonnet-5";
+		ok.roles.chat = "acme:claude-sonnet-5-5";
 		expect(errorOf(ok)).toBe("");
 	});
 
@@ -180,13 +180,13 @@ describe("config schema", () => {
 		bad.roles.chat = "acme:claude-ghost";
 		expect(errorOf(bad)).toContain("unknown model");
 		const badProvider = clone(valid);
-		badProvider.roles.chat = "mistral:claude-sonnet-5";
+		badProvider.roles.chat = "mistral:claude-sonnet-5-5";
 		expect(errorOf(badProvider)).toContain("unknown provider");
 	});
 
 	it("rejects a shorthand with no colon", () => {
 		const bad = clone(valid);
-		bad.roles.chat = "claude-sonnet-5";
+		bad.roles.chat = "claude-sonnet-5-5";
 		expect(errorOf(bad)).not.toBe("");
 	});
 

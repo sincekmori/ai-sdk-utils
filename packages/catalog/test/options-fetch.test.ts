@@ -16,10 +16,10 @@ const gatewayConfig = ConfigSchema.parse({
 				apiKey: "test-key", // inline so resolving needs no env var
 				backends: { anthropic: { vendor: "anthropic", pathTemplate: "anthropic/{slug}" } },
 			},
-			models: [{ id: "claude-sonnet-4-6", backend: "anthropic", slug: "sonnet" }],
+			models: [{ id: "claude-sonnet-5-5", backend: "anthropic", slug: "sonnet" }],
 		},
 	],
-	roles: { chat: { provider: "acme", model: "claude-sonnet-4-6" } },
+	roles: { chat: { provider: "acme", model: "claude-sonnet-5-5" } },
 });
 
 // Records URLs passed to options.fetch; replies with a canned 500 that ends the call.

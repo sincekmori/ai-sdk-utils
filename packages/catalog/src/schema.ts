@@ -118,7 +118,7 @@ export type ModelCost = z.infer<typeof ModelCostSchema>;
  * that the right ones are present for the provider's kind.
  */
 export const ModelSchema = z.strictObject({
-	id: z.string().min(1), // must match the vendor's model id (e.g. "gpt-5.6")
+	id: z.string().min(1), // must match the vendor's model id (e.g. "gpt-6-astra")
 	api: ModelApiSchema.optional(), // call surface; omit for the vendor default
 	backend: z.string().min(1).optional(), // gateway providers only (backends key)
 	slug: z.string().min(1).optional(), // gateway providers only (path override)
@@ -163,7 +163,7 @@ export type VendorBlock = z.infer<typeof VendorBlockSchema>;
  *     `resolve` override passed to `createCatalog` (e.g. Amazon Bedrock).
  */
 export const ProviderSchema = z.strictObject({
-	id: z.string().min(1), // becomes the registry prefix => "openai:gpt-5.6"
+	id: z.string().min(1), // becomes the registry prefix => "openai:gpt-6-astra"
 	vendor: z.union([VendorSchema, VendorBlockSchema]).optional(), // direct providers only
 	gateway: GatewayOptionsSchema.optional(), // gateway providers only
 	// Default call settings inherited by every model in this provider. Each

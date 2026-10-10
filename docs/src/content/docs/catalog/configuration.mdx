@@ -46,7 +46,7 @@ Several direct vendors, inherited default call settings, and a local OpenAI-comp
 <Code code={withUserSchemaPath(standard)} lang="json" title="ai-sdk-catalog.standard.json" />
 
 - The `openai` provider's `settings` block sets default call settings inherited by every one of its
-  models; `gpt-5.6-luna` overrides `temperature` for itself only. Settings are baked into the model
+  models; `gpt-6-luna` overrides `temperature` for itself only. Settings are baked into the model
   handle, and remain overridable per call.
 - No model writes a `cost` block: each model's price sheet — [models.dev](https://models.dev)
   billing buckets, in USD per 1 million tokens — is filled from an embedded models.dev snapshot
@@ -85,7 +85,7 @@ your own gateway with multiple backends, `actionMap` and `slug` overrides, and p
   provider's `vendor` block.
 - `roles` here use the string shorthand `"provider:model"`, split at the first `:`; the object
   form `{ "provider": ..., "model": ... }` (see the other examples) is equivalent.
-- Per-model `settings` merge over the provider's: `gpt-5.6-luna` keeps the inherited
+- Per-model `settings` merge over the provider's: `gpt-6-luna` keeps the inherited
   `maxOutputTokens` and `reasoningEffort` while overriding `temperature` and adding
   `parallelToolCalls`.
 

@@ -55,11 +55,11 @@ One JSON file, every kind of provider:
     {
       "id": "openai",
       "settings": { "temperature": 0.7 },
-      "models": [{ "id": "gpt-5.6" }, { "id": "gpt-5.6-luna" }]
+      "models": [{ "id": "gpt-6-astra" }, { "id": "gpt-6-luna" }]
     },
     {
       "id": "anthropic",
-      "models": [{ "id": "claude-sonnet-5" }]
+      "models": [{ "id": "claude-sonnet-5-5" }]
     },
     {
       "id": "acme",
@@ -76,15 +76,15 @@ One JSON file, every kind of provider:
         }
       },
       "models": [
-        { "id": "claude-opus-4-8", "backend": "claude" },
-        { "id": "gemini-3.5-flash", "backend": "gemini", "slug": "flash" }
+        { "id": "claude-opus-5-5", "backend": "claude" },
+        { "id": "gemini-3.8-flash", "backend": "gemini", "slug": "flash" }
       ]
     }
   ],
   "roles": {
-    "chat": "anthropic:claude-sonnet-5",
-    "search": "acme:gemini-3.5-flash",
-    "cheap": { "provider": "openai", "model": "gpt-5.6-luna" }
+    "chat": "anthropic:claude-sonnet-5-5",
+    "search": "acme:gemini-3.8-flash",
+    "cheap": { "provider": "openai", "model": "gpt-6-luna" }
   }
 }
 ```
@@ -197,7 +197,7 @@ A direct provider's `vendor` block, the `gateway` block, and each gateway backen
           }
         }
       },
-      "models": [{ "id": "claude-opus-4-8", "backend": "claude" }]
+      "models": [{ "id": "claude-opus-5-5", "backend": "claude" }]
     }
   ]
 }
@@ -261,9 +261,9 @@ The two are merged, with the model winning: scalar fields are overridden, and `p
         "providerOptions": { "openai": { "reasoningEffort": "low" } }
       },
       "models": [
-        { "id": "gpt-5.6" },
+        { "id": "gpt-6-astra" },
         {
-          "id": "gpt-5.6-luna",
+          "id": "gpt-6-luna",
           "settings": {
             "temperature": 0.2,
             "providerOptions": { "openai": { "parallelToolCalls": false } }
@@ -275,7 +275,7 @@ The two are merged, with the model winning: scalar fields are overridden, and `p
 }
 ```
 
-Here `gpt-5.6` inherits the provider defaults as-is. `gpt-5.6-luna` overrides `temperature` (while `maxOutputTokens` stays inherited), and its `providerOptions.openai` gains `parallelToolCalls: false` alongside the inherited `reasoningEffort: "low"`. `providerOptions` values are provider-specific and passed through untouched.
+Here `gpt-6-astra` inherits the provider defaults as-is. `gpt-6-luna` overrides `temperature` (while `maxOutputTokens` stays inherited), and its `providerOptions.openai` gains `parallelToolCalls: false` alongside the inherited `reasoningEffort: "low"`. `providerOptions` values are provider-specific and passed through untouched.
 
 `metaForRole(role)?.settings` returns the **effective** (merged) settings — exactly what is baked into the handle.
 
@@ -295,7 +295,7 @@ Write a `cost` block only to pin or correct a price — an explicit value always
       "id": "anthropic",
       "models": [
         {
-          "id": "claude-sonnet-5",
+          "id": "claude-sonnet-5-5",
           "cost": { "input": 2, "output": 10, "cacheRead": 0.2, "cacheWrite": 2.5 }
         }
       ]

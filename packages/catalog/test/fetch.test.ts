@@ -17,7 +17,7 @@ const googleBackend: GeminiRewrite = {
 };
 
 // Module-scope slug maps so tests stay free of inline conditionals.
-const SLUGS: Record<string, string> = { "gpt-5.6": "gpt-mini", "gemini-3.5-flash": "flash" };
+const SLUGS: Record<string, string> = { "gpt-6-astra": "gpt-mini", "gemini-3.8-flash": "flash" };
 const slugFor = (model: string): string => SLUGS[model] ?? model;
 const identitySlug = (model: string): string => model;
 
@@ -51,7 +51,7 @@ describe("createBodyModelFetch", () => {
 
 		await fetchImpl(`https://gw/openai/${MODEL_SLUG_PLACEHOLDER}/chat/completions`, {
 			method: "POST",
-			body: JSON.stringify({ model: "gpt-5.6" }),
+			body: JSON.stringify({ model: "gpt-6-astra" }),
 		});
 
 		expect(calls[0]).toBe("https://gw/openai/gpt-mini/chat/completions");
@@ -73,7 +73,7 @@ describe("createGeminiFetch", () => {
 		const fetchImpl = createGeminiFetch("https://gw/v1", googleBackend, { slugFor });
 
 		await fetchImpl(
-			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse",
+			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:streamGenerateContent?alt=sse",
 		);
 
 		expect(calls[0]).toBe("https://gw/v1/google/flash:customStreamGenerateContent?alt=sse");
@@ -86,10 +86,10 @@ describe("createGeminiFetch", () => {
 		});
 
 		await fetchImpl(
-			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
 		);
 
-		expect(calls[0]).toBe("https://gw/v1/google/gemini-3.5-flash:generateContent");
+		expect(calls[0]).toBe("https://gw/v1/google/gemini-3.8-flash:generateContent");
 	});
 });
 
@@ -126,7 +126,7 @@ describe("createQueryFetch", () => {
 
 		await fetchImpl(`https://gw/openai/${MODEL_SLUG_PLACEHOLDER}/chat/completions`, {
 			method: "POST",
-			body: JSON.stringify({ model: "gpt-5.6" }),
+			body: JSON.stringify({ model: "gpt-6-astra" }),
 		});
 
 		expect(calls[0]?.url).toBe(
@@ -144,7 +144,7 @@ describe("custom base fetch", () => {
 
 		await fetchImpl(`https://gw/openai/${MODEL_SLUG_PLACEHOLDER}/chat/completions`, {
 			method: "POST",
-			body: JSON.stringify({ model: "gpt-5.6" }),
+			body: JSON.stringify({ model: "gpt-6-astra" }),
 		});
 
 		expect(calls[0]?.url).toBe("https://gw/openai/gpt-mini/chat/completions");
@@ -169,7 +169,7 @@ describe("custom base fetch", () => {
 
 		const body = JSON.stringify({ contents: [] });
 		await fetchImpl(
-			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
 			{ method: "POST", body },
 		);
 

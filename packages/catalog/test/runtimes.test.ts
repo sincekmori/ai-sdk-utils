@@ -12,14 +12,12 @@ import { ConfigSchema } from "../src/schema.ts";
 describe("createCatalog with a direct vendor", () => {
 	it("resolves a bare provider through its @ai-sdk vendor (vendor defaults to id)", () => {
 		const cfg = ConfigSchema.parse({
-			providers: [
-				{ id: "openai", vendor: { apiKey: "test-key" }, models: [{ id: "gpt-5.6-luna" }] },
-			],
-			roles: { chat: { provider: "openai", model: "gpt-5.6-luna" } },
+			providers: [{ id: "openai", vendor: { apiKey: "test-key" }, models: [{ id: "gpt-6-luna" }] }],
+			roles: { chat: { provider: "openai", model: "gpt-6-luna" } },
 		});
 		const catalog = createCatalog(cfg);
 		const model = catalog.modelForRole("chat") as unknown as { modelId: string };
-		expect(model.modelId).toBe("gpt-5.6-luna");
+		expect(model.modelId).toBe("gpt-6-luna");
 	});
 
 	it("honors an explicit vendor different from the provider id", () => {
@@ -28,35 +26,33 @@ describe("createCatalog with a direct vendor", () => {
 				{
 					id: "claude",
 					vendor: { id: "anthropic", apiKey: "test-key" },
-					models: [{ id: "claude-opus-4-8" }],
+					models: [{ id: "claude-opus-5-5" }],
 				},
 			],
-			roles: { chat: { provider: "claude", model: "claude-opus-4-8" } },
+			roles: { chat: { provider: "claude", model: "claude-opus-5-5" } },
 		});
 		const catalog = createCatalog(cfg);
 		const model = catalog.modelForRole("chat") as unknown as { modelId: string };
-		expect(model.modelId).toBe("claude-opus-4-8");
+		expect(model.modelId).toBe("claude-opus-5-5");
 	});
 
 	it("accepts the string shorthand for the vendor", () => {
 		const cfg = ConfigSchema.parse({
-			providers: [{ id: "claude", vendor: "anthropic", models: [{ id: "claude-opus-4-8" }] }],
-			roles: { chat: { provider: "claude", model: "claude-opus-4-8" } },
+			providers: [{ id: "claude", vendor: "anthropic", models: [{ id: "claude-opus-5-5" }] }],
+			roles: { chat: { provider: "claude", model: "claude-opus-5-5" } },
 		});
 		const catalog = createCatalog(cfg);
 		const model = catalog.modelForRole("chat") as unknown as { modelId: string };
-		expect(model.modelId).toBe("claude-opus-4-8");
+		expect(model.modelId).toBe("claude-opus-5-5");
 	});
 
 	it("returns the vendor instance for a direct provider", () => {
 		const cfg = ConfigSchema.parse({
-			providers: [
-				{ id: "openai", vendor: { apiKey: "test-key" }, models: [{ id: "gpt-5.6-luna" }] },
-			],
-			roles: { chat: { provider: "openai", model: "gpt-5.6-luna" } },
+			providers: [{ id: "openai", vendor: { apiKey: "test-key" }, models: [{ id: "gpt-6-luna" }] }],
+			roles: { chat: { provider: "openai", model: "gpt-6-luna" } },
 		});
 		const catalog = createCatalog(cfg);
-		const openai = catalog.provider<{ languageModel: unknown }>("openai:gpt-5.6-luna");
+		const openai = catalog.provider<{ languageModel: unknown }>("openai:gpt-6-luna");
 		expect(openai?.languageModel).toBeTypeOf("function");
 	});
 });
@@ -71,15 +67,15 @@ describe("createCatalog with a gateway provider", () => {
 					apiKey: "test-key", // inline so resolving needs no env var
 					backends: { anthropic: { vendor: "anthropic", pathTemplate: "anthropic/{slug}" } },
 				},
-				models: [{ id: "claude-sonnet-4-6", backend: "anthropic", slug: "sonnet" }],
+				models: [{ id: "claude-sonnet-5-5", backend: "anthropic", slug: "sonnet" }],
 			},
 		],
-		roles: { chat: { provider: "acme", model: "claude-sonnet-4-6" } },
+		roles: { chat: { provider: "acme", model: "claude-sonnet-5-5" } },
 	});
 
 	it("indexes gateway metadata (backend, slug)", () => {
 		const catalog = createCatalog(gatewayConfig);
-		const meta = catalog.meta.get("acme:claude-sonnet-4-6");
+		const meta = catalog.meta.get("acme:claude-sonnet-5-5");
 		expect(meta?.backend).toBe("anthropic");
 		expect(meta?.slug).toBe("sonnet");
 	});
@@ -87,7 +83,7 @@ describe("createCatalog with a gateway provider", () => {
 	it("routes a gateway model to a real handle without a resolve override", () => {
 		const catalog = createCatalog(gatewayConfig);
 		const model = catalog.modelForRole("chat") as unknown as { modelId: string };
-		expect(model.modelId).toBe("claude-sonnet-4-6");
+		expect(model.modelId).toBe("claude-sonnet-5-5");
 	});
 
 	it("routes each gateway model to its backend's vendor, including two backends of one vendor", () => {
@@ -151,7 +147,7 @@ describe("createCatalog with a gateway provider", () => {
 
 	it("exposes the backend's provider instance via provider(key)", () => {
 		const catalog = createCatalog(gatewayConfig);
-		const anthropic = catalog.provider<{ languageModel: unknown }>("acme:claude-sonnet-4-6");
+		const anthropic = catalog.provider<{ languageModel: unknown }>("acme:claude-sonnet-5-5");
 		// The underlying @ai-sdk/anthropic instance, for provider-native features.
 		expect(anthropic?.languageModel).toBeTypeOf("function");
 	});

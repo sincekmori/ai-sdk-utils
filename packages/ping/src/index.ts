@@ -26,7 +26,7 @@ export type PingOptions = Pick<Parameters<typeof streamText>[0], "providerOption
  * import { openai } from "@ai-sdk/openai";
  * import { ping } from "ai-sdk-ping";
  *
- * const model = openai("gpt-5.2-chat");
+ * const model = openai("gpt-6-astra");
  * const reachable = await ping(model);
  *
  * if (reachable) {

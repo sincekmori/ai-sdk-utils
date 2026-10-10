@@ -15,30 +15,32 @@ import { ModelCostSchema, VendorSchema } from "../src/schema.ts";
 describe("embedded models.dev costs", () => {
 	it("fills a direct provider's missing cost from the snapshot", () => {
 		const catalog = createCatalog({
-			providers: [{ id: "anthropic", models: [{ id: "claude-sonnet-5" }] }],
+			providers: [{ id: "anthropic", models: [{ id: "claude-sonnet-5-5" }] }],
 			roles: {},
 		});
-		expect(modelCosts.anthropic?.["claude-sonnet-5"]).toBeDefined();
-		expect(catalog.meta.get("anthropic:claude-sonnet-5")?.cost).toStrictEqual(
-			modelCosts.anthropic?.["claude-sonnet-5"],
+		expect(modelCosts.anthropic?.["claude-sonnet-5-5"]).toBeDefined();
+		expect(catalog.meta.get("anthropic:claude-sonnet-5-5")?.cost).toStrictEqual(
+			modelCosts.anthropic?.["claude-sonnet-5-5"],
 		);
 	});
 
 	it("resolves the vendor through a vendor block, not the provider id", () => {
 		const catalog = createCatalog({
-			providers: [{ id: "my-proxy", vendor: "openai", models: [{ id: "gpt-4o" }] }],
+			providers: [{ id: "my-proxy", vendor: "openai", models: [{ id: "gpt-6-astra" }] }],
 			roles: {},
 		});
-		expect(catalog.meta.get("my-proxy:gpt-4o")?.cost).toStrictEqual(modelCosts.openai?.["gpt-4o"]);
+		expect(catalog.meta.get("my-proxy:gpt-6-astra")?.cost).toStrictEqual(
+			modelCosts.openai?.["gpt-6-astra"],
+		);
 	});
 
 	it("an explicit cost in the config always wins", () => {
 		const cost = { input: 1, output: 2 };
 		const catalog = createCatalog({
-			providers: [{ id: "anthropic", models: [{ id: "claude-sonnet-5", cost }] }],
+			providers: [{ id: "anthropic", models: [{ id: "claude-sonnet-5-5", cost }] }],
 			roles: {},
 		});
-		expect(catalog.meta.get("anthropic:claude-sonnet-5")?.cost).toStrictEqual(cost);
+		expect(catalog.meta.get("anthropic:claude-sonnet-5-5")?.cost).toStrictEqual(cost);
 	});
 
 	it("leaves cost undefined for a model id the snapshot does not list", () => {
@@ -52,12 +54,12 @@ describe("embedded models.dev costs", () => {
 	it("leaves cost undefined for a resolver provider (vendor unknown)", () => {
 		const catalog = createCatalog(
 			{
-				providers: [{ id: "ollama", models: [{ id: "gpt-4o" }] }],
+				providers: [{ id: "ollama", models: [{ id: "gpt-6-astra" }] }],
 				roles: {},
 			},
 			{ providers: { ollama: { resolve: () => ({}) as unknown as LanguageModel } } },
 		);
-		expect(catalog.meta.get("ollama:gpt-4o")?.cost).toBeUndefined();
+		expect(catalog.meta.get("ollama:gpt-6-astra")?.cost).toBeUndefined();
 	});
 
 	it("leaves cost undefined for the openai-compatible vendor (no single upstream)", () => {
@@ -66,12 +68,12 @@ describe("embedded models.dev costs", () => {
 				{
 					id: "local",
 					vendor: { id: "openai-compatible", baseURL: "http://localhost:1234/v1" },
-					models: [{ id: "gpt-4o" }],
+					models: [{ id: "gpt-6-astra" }],
 				},
 			],
 			roles: {},
 		});
-		expect(catalog.meta.get("local:gpt-4o")?.cost).toBeUndefined();
+		expect(catalog.meta.get("local:gpt-6-astra")?.cost).toBeUndefined();
 	});
 
 	it("fills a gateway model's missing cost from its backend's vendor", () => {
@@ -83,13 +85,13 @@ describe("embedded models.dev costs", () => {
 						baseURL: "https://gateway.example.com/v1",
 						backends: { anthro: { vendor: "anthropic", pathTemplate: "anthropic/{slug}" } },
 					},
-					models: [{ id: "claude-sonnet-5", backend: "anthro" }],
+					models: [{ id: "claude-sonnet-5-5", backend: "anthro" }],
 				},
 			],
 			roles: {},
 		});
-		expect(catalog.meta.get("acme:claude-sonnet-5")?.cost).toStrictEqual(
-			modelCosts.anthropic?.["claude-sonnet-5"],
+		expect(catalog.meta.get("acme:claude-sonnet-5-5")?.cost).toStrictEqual(
+			modelCosts.anthropic?.["claude-sonnet-5-5"],
 		);
 	});
 

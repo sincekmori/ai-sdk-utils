@@ -19,7 +19,7 @@ npm install ai-sdk-ping
 import { openai } from "@ai-sdk/openai";
 import { ping } from "ai-sdk-ping";
 
-const model = openai("gpt-5.2-chat");
+const model = openai("gpt-6-astra");
 const reachable = await ping(model);
 
 if (reachable) {
@@ -33,5 +33,5 @@ Works with any AI SDK-compatible provider:
 import { anthropic } from "@ai-sdk/anthropic";
 import { ping } from "ai-sdk-ping";
 
-const reachable = await ping(anthropic("claude-opus-4-8"));
+const reachable = await ping(anthropic("claude-opus-5-5"));
 ```

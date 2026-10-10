@@ -14,15 +14,15 @@ const config = ConfigSchema.parse({
 	providers: [
 		{
 			id: "openai",
-			models: [{ id: "gpt-5.6-luna", settings: { temperature: 0.7, maxOutputTokens: 128_000 } }],
+			models: [{ id: "gpt-6-luna", settings: { temperature: 0.7, maxOutputTokens: 128_000 } }],
 		},
-		{ id: "anthropic", models: [{ id: "claude-sonnet-5" }] },
-		{ id: "ollama", models: [{ id: "qwen3.6:35b", api: "chat" }] },
+		{ id: "anthropic", models: [{ id: "claude-sonnet-5-5" }] },
+		{ id: "ollama", models: [{ id: "qwen3.8:27b", api: "chat" }] },
 	],
 	roles: {
-		chat: { provider: "anthropic", model: "claude-sonnet-5" },
-		summarize: { provider: "openai", model: "gpt-5.6-luna" },
-		local: { provider: "ollama", model: "qwen3.6:35b" },
+		chat: { provider: "anthropic", model: "claude-sonnet-5-5" },
+		summarize: { provider: "openai", model: "gpt-6-luna" },
+		local: { provider: "ollama", model: "qwen3.8:27b" },
 	},
 });
 
@@ -48,12 +48,12 @@ describe("createCatalog", () => {
 	it("indexes every model by its provider:model key with metadata intact", () => {
 		const catalog = createCatalog(config, { providers: fakeOverrides() });
 		expect([...catalog.meta.keys()].toSorted()).toStrictEqual([
-			"anthropic:claude-sonnet-5",
-			"ollama:qwen3.6:35b",
-			"openai:gpt-5.6-luna",
+			"anthropic:claude-sonnet-5-5",
+			"ollama:qwen3.8:27b",
+			"openai:gpt-6-luna",
 		]);
 
-		const mini = catalog.meta.get("openai:gpt-5.6-luna");
+		const mini = catalog.meta.get("openai:gpt-6-luna");
 		expect(mini?.settings).toStrictEqual({ temperature: 0.7, maxOutputTokens: 128_000 });
 		expect(mini?.provider).toBe("openai");
 	});
@@ -62,13 +62,13 @@ describe("createCatalog", () => {
 		const catalog = createCatalog(config, { providers: fakeOverrides() });
 		const model = catalog.modelForRole("chat") as unknown as { provider: string; modelId: string };
 		expect(model.provider).toBe("anthropic");
-		expect(model.modelId).toBe("claude-sonnet-5");
+		expect(model.modelId).toBe("claude-sonnet-5-5");
 		expect(() => catalog.modelForRole("nope")).toThrow(/Unknown role/u);
 	});
 
 	it("metaForRole returns the role's metadata", () => {
 		const catalog = createCatalog(config, { providers: fakeOverrides() });
-		expect(catalog.metaForRole("summarize")?.key).toBe("openai:gpt-5.6-luna");
+		expect(catalog.metaForRole("summarize")?.key).toBe("openai:gpt-6-luna");
 		expect(catalog.metaForRole("summarize")?.provider).toBe("openai");
 		expect(catalog.metaForRole("nope")).toBeUndefined();
 	});
@@ -88,24 +88,24 @@ describe("createCatalog", () => {
 		// Nothing is resolved until a handle is actually requested.
 		expect(openai).not.toHaveBeenCalled();
 
-		catalog.model("openai:gpt-5.6-luna");
-		catalog.model("anthropic:claude-sonnet-5");
-		catalog.model("ollama:qwen3.6:35b");
+		catalog.model("openai:gpt-6-luna");
+		catalog.model("anthropic:claude-sonnet-5-5");
+		catalog.model("ollama:qwen3.8:27b");
 
 		// The resolver receives the full model entry: id, key, api, settings, ...
 		expect(openai).toHaveBeenCalledWith(
 			expect.objectContaining({
-				id: "gpt-5.6-luna",
-				key: "openai:gpt-5.6-luna",
+				id: "gpt-6-luna",
+				key: "openai:gpt-6-luna",
 				settings: { temperature: 0.7, maxOutputTokens: 128_000 },
 			}),
 		);
 		expect(anthropic).toHaveBeenCalledWith(
-			expect.objectContaining({ id: "claude-sonnet-5", provider: "anthropic" }),
+			expect.objectContaining({ id: "claude-sonnet-5-5", provider: "anthropic" }),
 		);
 		// An explicit api is part of the entry, so the resolver can pick the surface.
 		expect(ollama).toHaveBeenCalledWith(
-			expect.objectContaining({ id: "qwen3.6:35b", api: "chat" }),
+			expect.objectContaining({ id: "qwen3.8:27b", api: "chat" }),
 		);
 	});
 
@@ -119,8 +119,8 @@ describe("createCatalog", () => {
 		};
 		const catalog = createCatalog(config, { providers: { ...fakeOverrides(), openai } });
 
-		const first = catalog.model("openai:gpt-5.6-luna");
-		const second = catalog.model("openai:gpt-5.6-luna");
+		const first = catalog.model("openai:gpt-6-luna");
+		const second = catalog.model("openai:gpt-6-luna");
 		expect(second).toBe(first);
 		expect(calls).toBe(1); // resolver invoked once, not per access
 	});
@@ -136,10 +136,10 @@ describe("createCatalog", () => {
 		const catalog = createCatalog(config, { providers: fakeOverrides(make) });
 
 		// Model with settings is wrapped -> a different object than the resolver returned.
-		expect(catalog.model("openai:gpt-5.6-luna")).not.toBe(handles.get("openai:gpt-5.6-luna"));
+		expect(catalog.model("openai:gpt-6-luna")).not.toBe(handles.get("openai:gpt-6-luna"));
 		// Model without settings is returned untouched -> same reference.
-		expect(catalog.model("anthropic:claude-sonnet-5")).toBe(
-			handles.get("anthropic:claude-sonnet-5"),
+		expect(catalog.model("anthropic:claude-sonnet-5-5")).toBe(
+			handles.get("anthropic:claude-sonnet-5-5"),
 		);
 	});
 
@@ -154,9 +154,9 @@ describe("createCatalog", () => {
 						providerOptions: { openai: { reasoningEffort: "low" } },
 					},
 					models: [
-						{ id: "gpt-5.6" },
+						{ id: "gpt-6-astra" },
 						{
-							id: "gpt-5.6-luna",
+							id: "gpt-6-luna",
 							settings: {
 								temperature: 0.2,
 								providerOptions: { openai: { parallelToolCalls: false } },
@@ -165,16 +165,16 @@ describe("createCatalog", () => {
 					],
 				},
 			],
-			roles: { chat: { provider: "openai", model: "gpt-5.6" } },
+			roles: { chat: { provider: "openai", model: "gpt-6-astra" } },
 		});
 		const catalog = createCatalog(merged, { providers: fakeOverrides() });
 
-		expect(catalog.meta.get("openai:gpt-5.6")?.settings).toStrictEqual({
+		expect(catalog.meta.get("openai:gpt-6-astra")?.settings).toStrictEqual({
 			temperature: 0.7,
 			maxOutputTokens: 128_000,
 			providerOptions: { openai: { reasoningEffort: "low" } },
 		});
-		expect(catalog.meta.get("openai:gpt-5.6-luna")?.settings).toStrictEqual({
+		expect(catalog.meta.get("openai:gpt-6-luna")?.settings).toStrictEqual({
 			temperature: 0.2, // model overrides
 			maxOutputTokens: 128_000, // inherited
 			providerOptions: { openai: { reasoningEffort: "low", parallelToolCalls: false } }, // merged
@@ -183,37 +183,37 @@ describe("createCatalog", () => {
 
 	it("model(key) resolves an explicit address, including ids with colons", () => {
 		const catalog = createCatalog(config, { providers: fakeOverrides() });
-		const model = catalog.model("ollama:qwen3.6:35b") as unknown as { modelId: string };
-		expect(model.modelId).toBe("qwen3.6:35b");
+		const model = catalog.model("ollama:qwen3.8:27b") as unknown as { modelId: string };
+		expect(model.modelId).toBe("qwen3.8:27b");
 		expect(() => catalog.model("openai:nope")).toThrow(/Unknown model/u);
 	});
 
 	it("resolves the string role shorthand, splitting at the first colon", () => {
 		const shorthand = ConfigSchema.parse({
-			providers: [{ id: "ollama", models: [{ id: "qwen3.6:35b", api: "chat" }] }],
-			roles: { local: "ollama:qwen3.6:35b" },
+			providers: [{ id: "ollama", models: [{ id: "qwen3.8:27b", api: "chat" }] }],
+			roles: { local: "ollama:qwen3.8:27b" },
 		});
 		const catalog = createCatalog(shorthand, { providers: fakeOverrides() });
-		expect(catalog.roles.local?.key).toBe("ollama:qwen3.6:35b");
-		expect(catalog.metaForRole("local")?.id).toBe("qwen3.6:35b");
+		expect(catalog.roles.local?.key).toBe("ollama:qwen3.8:27b");
+		expect(catalog.metaForRole("local")?.id).toBe("qwen3.8:27b");
 		const model = catalog.modelForRole("local") as unknown as { modelId: string };
-		expect(model.modelId).toBe("qwen3.6:35b");
+		expect(model.modelId).toBe("qwen3.8:27b");
 	});
 
 	it("throws for a provider that is neither a built-in vendor nor has a resolve override", () => {
 		const cfg = ConfigSchema.parse({
-			providers: [{ id: "ollama", models: [{ id: "qwen3.6:35b" }] }],
-			roles: { local: { provider: "ollama", model: "qwen3.6:35b" } },
+			providers: [{ id: "ollama", models: [{ id: "qwen3.8:27b" }] }],
+			roles: { local: { provider: "ollama", model: "qwen3.8:27b" } },
 		});
 		expect(() => createCatalog(cfg)).toThrow(/not a built-in vendor/u);
 	});
 
 	it("validates its input: raw objects work, invalid ones throw a prettified error", () => {
 		const catalog = createCatalog({
-			providers: [{ id: "openai", models: [{ id: "gpt-5.6" }] }],
-			roles: { chat: { provider: "openai", model: "gpt-5.6" } },
+			providers: [{ id: "openai", models: [{ id: "gpt-6-astra" }] }],
+			roles: { chat: { provider: "openai", model: "gpt-6-astra" } },
 		});
-		expect(catalog.metaForRole("chat")?.id).toBe("gpt-5.6");
+		expect(catalog.metaForRole("chat")?.id).toBe("gpt-6-astra");
 		expect(() => createCatalog({ providers: [], roles: {} })).toThrow(/✖/u);
 	});
 });
@@ -234,10 +234,10 @@ describe("requiredRoles", () => {
 			requiredRoles: ["chat", "local"],
 		});
 		// metaForRole drops `undefined` for declared roles: no `?.` needed here.
-		expect(catalog.metaForRole("chat").key).toBe("anthropic:claude-sonnet-5");
-		expect(catalog.roles.local.key).toBe("ollama:qwen3.6:35b");
+		expect(catalog.metaForRole("chat").key).toBe("anthropic:claude-sonnet-5-5");
+		expect(catalog.roles.local.key).toBe("ollama:qwen3.8:27b");
 		const model = catalog.modelForRole("local") as unknown as { modelId: string };
-		expect(model.modelId).toBe("qwen3.6:35b");
+		expect(model.modelId).toBe("qwen3.8:27b");
 	});
 
 	it("rejects undeclared role names at compile time, still throwing at runtime", () => {
@@ -253,7 +253,7 @@ describe("requiredRoles", () => {
 describe("catalog.provider(key)", () => {
 	it("returns undefined for a resolver-backed provider and for an unknown key", () => {
 		const catalog = createCatalog(config, { providers: fakeOverrides() });
-		expect(catalog.provider("ollama:qwen3.6:35b")).toBeUndefined();
+		expect(catalog.provider("ollama:qwen3.8:27b")).toBeUndefined();
 		expect(catalog.provider("openai:nope")).toBeUndefined();
 	});
 });

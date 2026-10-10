@@ -100,7 +100,7 @@ describe("openai-compatible options", () => {
 		]) {
 			expect(() =>
 				createCatalog({
-					providers: [{ id: "anthropic", vendor: flags, models: [{ id: "claude-sonnet-5" }] }],
+					providers: [{ id: "anthropic", vendor: flags, models: [{ id: "claude-sonnet-5-5" }] }],
 					roles: {},
 				}),
 			).toThrow(/applies only to the "openai-compatible" vendor/u);
@@ -123,7 +123,7 @@ describe("openai-compatible options", () => {
 								},
 							},
 						},
-						models: [{ id: "claude-sonnet-5", backend: "claude" }],
+						models: [{ id: "claude-sonnet-5-5", backend: "claude" }],
 					},
 				],
 				roles: {},

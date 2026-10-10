@@ -35,7 +35,7 @@ export function vendorBlockOf(p: Provider): VendorBlock | undefined {
 /**
  * Normalizes a role reference to its `{ provider, model }` target. The string
  * shorthand splits at the **first** `:`, so model ids may contain colons
- * (`"ollama:qwen3.6:35b"` -> provider `ollama`, model `qwen3.6:35b`).
+ * (`"ollama:qwen3.8:27b"` -> provider `ollama`, model `qwen3.8:27b`).
  */
 export function parseRoleRef(ref: RoleRef): RoleTarget {
 	if (typeof ref === "string") {

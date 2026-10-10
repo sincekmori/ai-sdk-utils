@@ -52,10 +52,10 @@ describe("config headers and query on the wire", () => {
 							},
 						},
 					},
-					models: [{ id: "claude-sonnet-4-6", backend: "anthropic", slug: "sonnet" }],
+					models: [{ id: "claude-sonnet-5-5", backend: "anthropic", slug: "sonnet" }],
 				},
 			],
-			roles: { chat: { provider: "acme", model: "claude-sonnet-4-6" } },
+			roles: { chat: { provider: "acme", model: "claude-sonnet-5-5" } },
 		});
 		const { calls, fetch: baseFetch } = recordingFetch();
 		const catalog = createCatalog(config, { fetch: baseFetch });
@@ -86,10 +86,10 @@ describe("config headers and query on the wire", () => {
 						headers: { "Ocp-Apim-Subscription-Key": "{apiKey}" },
 						query: { "api-version": "2026-01-01" },
 					},
-					models: [{ id: "claude-sonnet-5" }],
+					models: [{ id: "claude-sonnet-5-5" }],
 				},
 			],
-			roles: { chat: { provider: "anthropic", model: "claude-sonnet-5" } },
+			roles: { chat: { provider: "anthropic", model: "claude-sonnet-5-5" } },
 		});
 		const { calls, fetch: baseFetch } = recordingFetch();
 		const catalog = createCatalog(config, { fetch: baseFetch });
@@ -113,10 +113,10 @@ describe("config headers and query on the wire", () => {
 						apiKey: "placeholder", // would land in x-api-key, but the header below wins
 						headers: { "x-api-key": "real-key" },
 					},
-					models: [{ id: "claude-sonnet-5" }],
+					models: [{ id: "claude-sonnet-5-5" }],
 				},
 			],
-			roles: { chat: { provider: "anthropic", model: "claude-sonnet-5" } },
+			roles: { chat: { provider: "anthropic", model: "claude-sonnet-5-5" } },
 		});
 		const { calls, fetch: baseFetch } = recordingFetch();
 		const catalog = createCatalog(config, { fetch: baseFetch });

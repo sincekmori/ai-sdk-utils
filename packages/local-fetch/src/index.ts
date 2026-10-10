@@ -76,7 +76,7 @@ export type LocalFetchOptions = {
  *
  * const fetch = createLocalFetch({
  *   streamTextOptions: {
- *     model: openai("gpt-5.2-chat"),
+ *     model: openai("gpt-6-astra"),
  *     instructions: "You are a helpful assistant.",
  *     tools: { myTool }, // automatically forwarded to convertToModelMessages too
  *   },

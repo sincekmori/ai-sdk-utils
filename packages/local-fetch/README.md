@@ -18,7 +18,7 @@ import { createLocalFetch } from "ai-sdk-local-fetch";
 import { openai } from "@ai-sdk/openai";
 
 const fetch = createLocalFetch({
-  model: openai("gpt-5.2-chat"),
+  model: openai("gpt-6-astra"),
   system: "You are a helpful assistant.",
 });
 ```
@@ -34,7 +34,7 @@ function Assistant({ apiKey }: { apiKey: string }) {
   const runtime = useChatRuntime({
     transport: new AssistantChatTransport({
       fetch: createLocalFetch({
-        model: openai("gpt-5.2-chat", { apiKey }),
+        model: openai("gpt-6-astra", { apiKey }),
         system: "You are a helpful assistant.",
       }),
     }),
