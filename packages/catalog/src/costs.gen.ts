@@ -199,6 +199,7 @@ export const modelCosts: VendorCosts = {
 		"gemini-3.6-flash": { input: 0.75, output: 3.75, cacheRead: 0.075 },
 		"gemini-3.7-flash": { input: 0.75, output: 3.75, cacheRead: 0.075 },
 		"gemini-3.8-flash": { input: 0.75, output: 3.75, cacheRead: 0.075 },
+		"gemini-4-argon": { input: 2, output: 10, cacheRead: 0.1 },
 		"gemini-embedding-001": { input: 0.15, output: 0 },
 		"gemini-embedding-2": { input: 0.2, output: 0 },
 		"gemini-flash-latest": { input: 0.75, output: 3.75, cacheRead: 0.075 },
