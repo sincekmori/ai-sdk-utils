@@ -107,6 +107,7 @@ Ready-made configs at three sizes live in [`examples/`](examples/): minimal, sta
 
 ```ts
 import { readFile } from "node:fs/promises";
+
 import { parse } from "yaml";
 
 const text = await readFile("./ai-sdk-catalog.yaml", "utf8");

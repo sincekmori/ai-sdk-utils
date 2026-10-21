@@ -157,6 +157,7 @@
 
   ```ts
   import { readFile } from "node:fs/promises";
+
   import { parse } from "yaml";
 
   const text = await readFile("./ai-sdk-catalog.yaml", "utf8");
@@ -168,6 +169,7 @@
 
   ```ts
   import { readFile } from "node:fs/promises";
+
   import { createCatalog } from "ai-sdk-catalog";
 
   const text = await readFile("./ai-sdk-catalog.json", "utf8");
