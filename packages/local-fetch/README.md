@@ -14,8 +14,8 @@ npm install ai-sdk-local-fetch
 ## Usage
 
 ```ts
-import { createLocalFetch } from "ai-sdk-local-fetch";
 import { openai } from "@ai-sdk/openai";
+import { createLocalFetch } from "ai-sdk-local-fetch";
 
 const fetch = createLocalFetch({
   model: openai("gpt-6-astra"),
@@ -26,9 +26,9 @@ const fetch = createLocalFetch({
 ### With `@assistant-ui/react`
 
 ```tsx
+import { openai } from "@ai-sdk/openai";
 import { AssistantChatTransport, useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import { createLocalFetch } from "ai-sdk-local-fetch";
-import { openai } from "@ai-sdk/openai";
 
 function Assistant({ apiKey }: { apiKey: string }) {
   const runtime = useChatRuntime({
