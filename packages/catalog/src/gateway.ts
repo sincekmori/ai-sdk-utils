@@ -164,29 +164,27 @@ export function createDirectRuntime(
 	},
 	baseFetch?: FetchFunction,
 ): ProviderRuntime {
-	let provider: VendorProvider | undefined = undefined;
-	const get = (): VendorProvider => {
-		if (provider === undefined) {
-			const description = `provider vendor "${vendor}"`;
-			const apiKey = resolveApiKey(options.apiKey, { description });
-			// Headers resolve here — lazily, like the key — so an env-var-backed
-			// header is only required once a model of this provider is used.
-			const headers = mergeAndResolveHeaders(options.headers, undefined, { apiKey, description });
-			provider = createVendor(vendor, {
-				apiKey,
-				baseURL: options.baseURL,
-				fetch:
-					options.query !== undefined && Object.keys(options.query).length > 0
-						? createQueryFetch(options.query, baseFetch)
-						: baseFetch,
-				headers,
-				name: options.name,
-				supportsStructuredOutputs: options.supportsStructuredOutputs,
-				includeUsage: options.includeUsage,
-			});
-		}
-		return provider;
+	const build = (): VendorProvider => {
+		const description = `provider vendor "${vendor}"`;
+		const apiKey = resolveApiKey(options.apiKey, { description });
+		// Headers resolve here — lazily, like the key — so an env-var-backed
+		// header is only required once a model of this provider is used.
+		const headers = mergeAndResolveHeaders(options.headers, undefined, { apiKey, description });
+		return createVendor(vendor, {
+			apiKey,
+			baseURL: options.baseURL,
+			fetch:
+				options.query !== undefined && Object.keys(options.query).length > 0
+					? createQueryFetch(options.query, baseFetch)
+					: baseFetch,
+			headers,
+			name: options.name,
+			supportsStructuredOutputs: options.supportsStructuredOutputs,
+			includeUsage: options.includeUsage,
+		});
 	};
+	const memo: { provider?: VendorProvider } = {};
+	const get = (): VendorProvider => (memo.provider ??= build());
 	return {
 		resolve: (modelId, api): LanguageModel => callSurface(get(), modelId, api),
 		instance: (): VendorProvider => get(),
