@@ -39,7 +39,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "ai": "^7.0.166"
+    "ai": "^7.0.173"
   },
   "peerDependencies": {
     "ai": ">=7.0.0"
