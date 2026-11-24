@@ -1,5 +1,11 @@
 # ai-sdk-catalog
 
+## 0.14.4
+
+### Patch Changes
+
+- e455abe: chore(catalog): refresh the embedded models.dev cost snapshot
+
 ## 0.14.3
 
 ### Patch Changes
